@@ -1529,7 +1529,7 @@ function normalizePhone(value) {
 function authIdentityForPhone(phone) {
   const digits = String(phone || '').replace(/\D/g, '');
   if (!digits) throw new Error('A valid telephone number is required.');
-  return \`phone.\${digits}@accounts.skillsprint.invalid\`;
+  return 'phone.' + digits + '@accounts.skillsprint.invalid';
 }
 
 function showPinRecoveryNotice() {
