@@ -65,6 +65,112 @@ let authMode = 'signin';
 let passwordResetOpen = false;
 
 const knownPages = new Set(['home', 'explore', 'practice', 'progress', 'profile']);
+
+const SESSION_IDLE_TIMEOUT_MS = 30 * 60 * 1000;
+const SESSION_ACTIVITY_KEY = 'skillsprint:last-activity';
+let idleCheckHandle = null;
+let lastActivityWriteAt = 0;
+let idleSignOutInProgress = false;
+
+function activityKey(userId = state.user?.id) {
+  return userId ? `${SESSION_ACTIVITY_KEY}:${userId}` : null;
+}
+
+function readLastActivity(userId = state.user?.id) {
+  const key = activityKey(userId);
+  if (!key) return 0;
+  try {
+    const value = Number(localStorage.getItem(key));
+    return Number.isFinite(value) && value > 0 ? value : 0;
+  } catch { return 0; }
+}
+
+function writeLastActivity(userId = state.user?.id, timestamp = Date.now()) {
+  const key = activityKey(userId);
+  if (!key) return;
+  try { localStorage.setItem(key, String(timestamp)); } catch { /* Session timeout still runs in this tab. */ }
+}
+
+function clearLastActivity(userId = state.user?.id) {
+  const key = activityKey(userId);
+  if (!key) return;
+  try { localStorage.removeItem(key); } catch { /* Ignore unavailable browser storage. */ }
+}
+
+function hasSessionExpired(userId) {
+  const lastActivity = readLastActivity(userId);
+  if (!lastActivity) {
+    // Existing signed-in sessions from before idle tracking receive a fresh activity baseline.
+    writeLastActivity(userId);
+    return false;
+  }
+  return Date.now() - lastActivity >= SESSION_IDLE_TIMEOUT_MS;
+}
+
+function recordSessionActivity() {
+  if (!state.user?.id || idleSignOutInProgress) return;
+  const now = Date.now();
+  // Keep the in-memory activity time exact; throttle storage writes to avoid excessive I/O.
+  if (now - lastActivityWriteAt >= 10000) {
+    writeLastActivity(state.user.id, now);
+    lastActivityWriteAt = now;
+  } else {
+    // The interval below persists recent activity even if the learner remains on the same screen.
+    state.lastActivityAt = now;
+  }
+  state.lastActivityAt = now;
+}
+
+async function expireIdleSession() {
+  if (idleSignOutInProgress || !state.user?.id) return;
+  idleSignOutInProgress = true;
+  const userId = state.user.id;
+  clearLastActivity(userId);
+  try {
+    const { error } = await supabase.auth.signOut({ scope: 'local' });
+    if (error) throw error;
+    say('Your session expired after 30 minutes of inactivity. Sign in to continue.');
+  } catch (error) {
+    idleSignOutInProgress = false;
+    toast(friendlyError(error));
+  }
+}
+
+function checkSessionInactivity() {
+  if (!state.user?.id || idleSignOutInProgress) return;
+  const storedActivity = readLastActivity(state.user.id);
+  const lastActivity = Math.max(storedActivity, Number(state.lastActivityAt) || 0);
+  if (lastActivity && Date.now() - lastActivity >= SESSION_IDLE_TIMEOUT_MS) {
+    void expireIdleSession();
+    return;
+  }
+  if (state.lastActivityAt && Date.now() - lastActivityWriteAt >= 10000) {
+    writeLastActivity(state.user.id, state.lastActivityAt);
+    lastActivityWriteAt = Date.now();
+  }
+}
+
+function startSessionInactivityMonitor() {
+  if (idleCheckHandle !== null) window.clearInterval(idleCheckHandle);
+  const now = Date.now();
+  const stored = readLastActivity();
+  state.lastActivityAt = stored || now;
+  if (!stored) writeLastActivity();
+  lastActivityWriteAt = now;
+  idleSignOutInProgress = false;
+
+  const activityEvents = ['pointerdown', 'keydown', 'touchstart', 'scroll', 'click', 'input'];
+  activityEvents.forEach((eventName) => document.addEventListener(eventName, recordSessionActivity, { passive: true }));
+  if (!window.__skillsprintIdleListenersBound) {
+    document.addEventListener('visibilitychange', () => {
+      if (!document.hidden) checkSessionInactivity();
+    });
+    window.addEventListener('focus', checkSessionInactivity);
+    window.__skillsprintIdleListenersBound = true;
+  }
+  idleCheckHandle = window.setInterval(checkSessionInactivity, 15000);
+}
+
 const localTimeZone = () => Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';
 
 function toast(message) {
@@ -127,6 +233,7 @@ function nav(page, { updateHash = true } = {}) {
     indicator.setAttribute('aria-hidden', 'true');
   }
   if (updateHash && location.hash !== `#${target}`) history.replaceState(null, '', `${location.pathname}${location.search}#${target}`);
+  // The URL hash is the durable navigation checkpoint; it survives reloads and sign-in.
   state.currentPage = target;
 }
 
@@ -1365,6 +1472,7 @@ function showPasswordReset() {
 }
 
 async function signOut() {
+  clearLastActivity();
   try {
     const { error } = await supabase.auth.signOut({ scope: 'local' });
     if (error) throw error;
@@ -1661,8 +1769,24 @@ async function initializeAuth() {
       return;
     }
     if (session?.user && ['INITIAL_SESSION', 'SIGNED_IN', 'TOKEN_REFRESHED', 'USER_UPDATED'].includes(event)) {
-      queueMicrotask(() => { void hydrate(session.user); });
+      if (event === 'INITIAL_SESSION' && hasSessionExpired(session.user.id)) {
+        void expireIdleSession();
+        return;
+      }
+      if (event === 'SIGNED_IN') {
+        writeLastActivity(session.user.id);
+        state.lastActivityAt = Date.now();
+      }
+      queueMicrotask(() => {
+        void hydrate(session.user).then(() => {
+          if (state.user?.id === session.user.id && state.hydratedUserId === session.user.id) {
+            startSessionInactivityMonitor();
+          }
+        });
+      });
     } else if (event === 'SIGNED_OUT') {
+      idleSignOutInProgress = false;
+      if (idleCheckHandle !== null) { window.clearInterval(idleCheckHandle); idleCheckHandle = null; }
       state.user = null;
       state.profile = null;
       state.progress = null;
@@ -1693,7 +1817,14 @@ async function initializeAuth() {
     const { data, error } = await supabase.auth.getSession();
     if (error) throw error;
     if (data?.session?.user) {
+      if (hasSessionExpired(data.session.user.id)) {
+        await supabase.auth.signOut({ scope: 'local' });
+        say('Your session expired after 30 minutes of inactivity. Sign in to continue.');
+        lock();
+        return;
+      }
       await hydrate(data.session.user);
+      if (state.hydratedUserId === data.session.user.id) startSessionInactivityMonitor();
       if (params.get('type') === 'recovery') queueMicrotask(showPasswordReset);
     } else lock();
   } catch (error) {
