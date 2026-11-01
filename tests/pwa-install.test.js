@@ -52,7 +52,7 @@ test('all install icons referenced by the manifest exist', async () => {
 });
 
 test('the service worker cache version is advanced for this release', () => {
-  assert.match(worker, /const VERSION = 'skillsprint-shell-v4'/);
+  assert.match(worker, /const VERSION = 'skillsprint-shell-v5'/);
   assert.match(worker, /name\.startsWith\('skillsprint-'\)/);
   assert.match(worker, /self\.clients\.claim\(\)/);
 });
