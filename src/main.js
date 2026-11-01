@@ -1,4 +1,5 @@
 import './styles/auth.css';
+import { downloadBlob } from './lib/download.js';
 import { supabase, isSupabaseConfigured } from './lib/supabase.js';
 import {
   createPracticeSession,
@@ -1137,11 +1138,10 @@ function openPlayground() {
   try { saved = { ...saved, ...(JSON.parse(localStorage.getItem(key) || '{}')) }; } catch { /* Invalid or blocked local cache. */ }
   const code = { ...saved };
   let activeLanguage = 'html';
-  let objectUrl = null;
   const languageLabels = { html: 'HTML', css: 'CSS', js: 'JavaScript' };
   openModal(`<div class="playground-studio" id="playgroundStudio">
     <header class="studio-header"><div class="studio-heading"><span class="studio-eyebrow">SKILLSPRINT · BUILD LAB</span><h2 id="modalTitle">Code playground</h2><p>Write, run and test front-end ideas in a private preview.</p></div><div class="studio-shortcuts"><span><kbd>Ctrl</kbd> + <kbd>Enter</kbd> Run</span><span><kbd>Tab</kbd> Indent</span></div></header>
-    <div class="studio-toolbar"><div class="studio-toolbar-main"><button class="btn btn-primary" type="button" id="runPlayground"><span aria-hidden="true">▶</span> Run</button><button class="btn btn-light" type="button" id="savePlayground">Save draft</button><button class="btn btn-light" type="button" id="copyPlayground">Copy code</button><button class="btn btn-light" type="button" id="exportPlayground">Export HTML</button></div><button class="btn btn-quiet" type="button" id="resetPlayground">Reset</button></div>
+    <div class="studio-toolbar"><div class="studio-toolbar-main"><button class="btn btn-primary" type="button" id="runPlayground"><span aria-hidden="true">▶</span> Run</button><button class="btn btn-light" type="button" id="savePlayground">Save draft</button><button class="btn btn-light" type="button" id="copyPlayground">Copy code</button><button class="btn btn-light studio-download-button" type="button" id="exportPlayground" title="Download a standalone HTML copy"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v11m0 0 4-4m-4 4-4-4M4 17v3h16v-3"/></svg> Download HTML</button></div><button class="btn btn-quiet" type="button" id="resetPlayground">Reset</button></div>
     <div class="studio-main">
       <section class="studio-editor-panel" aria-label="Code editor">
         <div class="studio-panel-head"><div class="studio-tablist" role="tablist" aria-label="Editor language"><button class="studio-tab active" type="button" role="tab" id="studioTabHtml" aria-selected="true" data-editor-tab="html">HTML</button><button class="studio-tab" type="button" role="tab" id="studioTabCss" aria-selected="false" data-editor-tab="css">CSS</button><button class="studio-tab" type="button" role="tab" id="studioTabJs" aria-selected="false" data-editor-tab="js">JS</button></div><span class="studio-editor-file" id="studioEditorFile">index.html</span></div>
@@ -1216,13 +1216,32 @@ function openPlayground() {
     try { await navigator.clipboard.writeText(combined); status.textContent='All three editor files copied to clipboard.'; toast('Code copied.'); }
     catch { status.textContent='Clipboard access was blocked. Use Export HTML to save your work.'; }
   });
-  $('#exportPlayground').addEventListener('click', () => {
-    currentCode(); const documentText=buildPlaygroundDocument(code.html,code.css,code.js);
-    if (objectUrl) URL.revokeObjectURL(objectUrl);
-    objectUrl=URL.createObjectURL(new Blob([documentText],{type:'text/html;charset=utf-8'}));
-    const link=document.createElement('a');link.href=objectUrl;link.download='skillsprint-playground.html';document.body.append(link);link.click();link.remove();
-    const exportedUrl=objectUrl;window.setTimeout(()=>URL.revokeObjectURL(exportedUrl),5000);objectUrl=null;
-    status.textContent='Standalone HTML exported. Keep a separate draft to continue editing HTML, CSS and JavaScript independently.';
+  $('#exportPlayground').addEventListener('click', async (event) => {
+    const button = event.currentTarget;
+    currentCode();
+    button.disabled = true;
+    button.textContent = 'Preparing file…';
+    try {
+      const documentText = buildPlaygroundDocument(code.html, code.css, code.js);
+      const result = await downloadBlob(
+        new Blob([documentText], { type: 'text/html;charset=utf-8' }),
+        'skillsprint-playground.html',
+      );
+      status.textContent = result.method === 'share'
+        ? 'The HTML file was passed to your device share sheet. Choose Save to Files or another destination.'
+        : result.method === 'open'
+          ? 'The HTML file opened in a new tab. Use your browser menu to save it to your device.'
+          : 'Download started: skillsprint-playground.html';
+      toast(result.method === 'download' ? 'Your HTML file is downloading.' : 'Your HTML file is ready to save.');
+    } catch (error) {
+      status.textContent = error?.name === 'AbortError'
+        ? 'File sharing was cancelled. You can try Download HTML again.'
+        : error?.message || 'The browser could not save this file. Try another browser.';
+      toast('Could not export the HTML file.');
+    } finally {
+      button.disabled = false;
+      button.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v11m0 0 4-4m-4 4-4-4M4 17v3h16v-3"/></svg> Download HTML';
+    }
   });
   $('#resetPlayground').addEventListener('click', () => {
     Object.assign(code,playgroundDefaults);setTab(activeLanguage);run();status.textContent='Starter example restored.';
@@ -1292,6 +1311,9 @@ async function signOut() {
 }
 
 function bindAppUI() {
+  $('#appHydrationRetry')?.addEventListener('click', () => {
+    if (state.user?.id) void hydrate(state.user, { force: true });
+  });
   document.addEventListener('click', (event) => {
     const action = event.target.closest('[data-action]');
     if (action) {
@@ -1377,6 +1399,10 @@ async function hydrate(user, { force = false } = {}) {
   if (!force && state.hydratedUserId === user.id) return;
   hydrationUserId = user.id;
   state.user = user;
+  app?.classList.add('is-hydrating');
+  app?.classList.remove('is-hydration-error');
+  setText('appHydrationTitle', 'Syncing your learning space');
+  setText('appHydrationMessage', 'Getting your lessons, progress and achievements ready.');
   unlock();
   const work = (async () => {
     try {
@@ -1384,9 +1410,13 @@ async function hydrate(user, { force = false } = {}) {
       state.hydratedUserId = user.id;
       const target = location.hash.replace(/^#\/?/, '').split(/[?&]/)[0];
       nav(knownPages.has(target) ? target : 'home');
+      app?.classList.remove('is-hydrating', 'is-hydration-error');
       if (authMessage) authMessage.textContent = '';
     } catch (error) {
       state.hydratedUserId = null;
+      app?.classList.add('is-hydrating', 'is-hydration-error');
+      setText('appHydrationTitle', 'We could not sync your learning space');
+      setText('appHydrationMessage', friendlyError(error));
       toast(`Could not load your learning data: ${friendlyError(error)}`);
     }
   })();
@@ -1564,7 +1594,7 @@ async function initializeAuth() {
     const { data, error } = await supabase.auth.getSession();
     if (error) throw error;
     if (data?.session?.user) {
-      await hydrate(data.session.user);
+      void hydrate(data.session.user);
       if (params.get('type') === 'recovery') queueMicrotask(showPasswordReset);
     } else lock();
   } catch (error) {
