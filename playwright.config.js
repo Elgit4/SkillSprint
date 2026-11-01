@@ -13,8 +13,12 @@ export default defineConfig({
   },
   projects: [
     { name: 'chromium', use: { ...devices['Desktop Chrome'] } },
+    { name: 'chrome-stable', use: { ...devices['Desktop Chrome'], channel: 'chrome' } },
+    { name: 'edge-stable', use: { ...devices['Desktop Edge'], channel: 'msedge' } },
     { name: 'firefox', use: { ...devices['Desktop Firefox'] } },
-    { name: 'webkit', use: { ...devices['Desktop Safari'] } },
+    { name: 'webkit-safari-engine', use: { ...devices['Desktop Safari'] } },
+    { name: 'android-chrome-emulation', use: { ...devices['Pixel 7'] } },
+    { name: 'ios-safari-emulation', use: { ...devices['iPhone 13'] } },
   ],
   webServer: {
     command: 'npm run preview -- --host 127.0.0.1',
