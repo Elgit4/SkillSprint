@@ -29,7 +29,7 @@ test('all six newer topics contain twenty unique questions after the repair migr
 
 test('lesson loading paginates until the final published row instead of stopping at 500', () => {
   const start = main.indexOf('async function fetchAllPublishedLessons');
-  const end = main.indexOf('async function refresh()', start);
+  const end = main.indexOf('async function refresh(', start);
   assert.notEqual(start, -1);
   assert.notEqual(end, -1);
   const loader = main.slice(start, end);

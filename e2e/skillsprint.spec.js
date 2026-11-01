@@ -1,13 +1,13 @@
 import { test, expect } from '@playwright/test';
 
-test('SkillSprint loads with a spinner-only start screen and email authentication', async ({ page }) => {
+test('SkillSprint loads with a spinner-only start screen and telephone-number PIN authentication', async ({ page }) => {
   const pageErrors = [];
   page.on('pageerror', (error) => pageErrors.push(error.message));
   await page.goto('/');
   await expect(page).toHaveTitle(/SkillSprint/i);
   await expect(page.locator('#ssBootScreen')).toBeHidden({ timeout: 15000 });
   await expect(page.locator('#ssBootScreen img')).toHaveCount(0);
-  await expect(page.locator('#authEmail')).toBeVisible();
+  await expect(page.locator('#authPhone')).toBeVisible();
   await expect(page.locator('#authPassword')).toBeVisible();
   await expect(page.locator('#googleSignIn')).toHaveCount(0);
   await expect(page.locator('link[rel="manifest"]')).toHaveAttribute('href', /manifest\.webmanifest/);
