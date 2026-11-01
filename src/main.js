@@ -1504,11 +1504,17 @@ function syncAuthMode() {
   authEmail.autocomplete = 'email';
   authEmail.placeholder = 'The email used on your old account';
   authPassword.autocomplete = isSignup ? 'new-password' : 'current-password';
-  authPassword.placeholder = isSignup ? 'Create a 6-digit PIN' : 'Enter your 6-digit PIN';
-  authPassword.inputMode = 'numeric';
-  authPassword.maxLength = 6;
-  authPassword.minLength = 6;
-  authPassword.pattern = '[0-9]{6}';
+  authPassword.placeholder = isSignup
+    ? 'Create a 6-digit PIN'
+    : isMigration
+      ? 'Enter the password or PIN used on your old account'
+      : 'Enter your 6-digit PIN';
+  authPassword.inputMode = isMigration ? 'text' : 'numeric';
+  authPassword.maxLength = isMigration ? 72 : 6;
+  authPassword.minLength = isMigration ? 1 : 6;
+  if (isMigration) authPassword.removeAttribute('pattern');
+  else authPassword.pattern = '[0-9]{6}';
+  $('label[for="authPassword"]').textContent = isMigration ? 'Existing account password or PIN' : 'Six-digit PIN';
   authConfirmPassword.value = '';
   authConfirmPassword.placeholder = 'Enter the PIN again';
   authConfirmPassword.inputMode = 'numeric';
@@ -1529,7 +1535,7 @@ function syncAuthMode() {
   $('#authModeToggle').innerHTML = isSignup ? 'Sign in instead <span aria-hidden="true">→</span>' : 'Create an account <span aria-hidden="true">→</span>';
   $('#authMigrationToggle').hidden = !isSignin;
   $('#authMigrationToggle').textContent = 'Move an existing email account';
-  $('#authPasswordRule').textContent = '6 digits · numbers only';
+  $('#authPasswordRule').textContent = isMigration ? 'Enter it exactly as before' : '6 digits · numbers only';
   $('#forgotPassword').hidden = !isSignin;
   $('#forgotPassword').textContent = 'Forgot PIN?';
   $('#authFormMetaLabel').textContent = 'Your PIN is protected by Supabase Auth';
@@ -1539,6 +1545,59 @@ function syncAuthMode() {
 
 function isSixDigitPin(value) {
   return /^[0-9]{6}$/.test(String(value || ''));
+}
+
+function requestMigrationPin() {
+  return new Promise((resolve) => {
+    if (!$('#modalBackdrop')) { resolve(null); return; }
+    let settled = false;
+    const finish = (value) => {
+      if (settled) return;
+      settled = true;
+      document.removeEventListener('keydown', onKeydown);
+      $('#modalBackdrop')?.removeEventListener('click', onBackdrop);
+      closeModal();
+      resolve(value);
+    };
+    const onKeydown = (event) => {
+      if (event.key === 'Escape') finish(null);
+    };
+    const onBackdrop = (event) => {
+      if (event.target?.id === 'modalBackdrop') finish(null);
+    };
+
+    openModal(`<h2 id="modalTitle">Set a six-digit PIN</h2>
+      <p class="muted">Your old account uses a credential that is not a six-digit numeric PIN. Choose a new six-digit PIN for telephone sign-in. Your account and learning progress will remain the same.</p>
+      <form id="migrationPinForm" class="settings-form">
+        <label for="migrationNewPin">New six-digit PIN</label>
+        <input id="migrationNewPin" type="password" inputmode="numeric" autocomplete="new-password" minlength="6" maxlength="6" pattern="[0-9]{6}" required>
+        <label for="migrationConfirmPin">Confirm new PIN</label>
+        <input id="migrationConfirmPin" type="password" inputmode="numeric" autocomplete="new-password" minlength="6" maxlength="6" pattern="[0-9]{6}" required>
+        <button class="btn btn-primary btn-full" type="submit">Save PIN and continue</button>
+        <button class="btn btn-full" id="cancelMigrationPin" type="button">Cancel for now</button>
+        <p class="lesson-feedback" id="migrationPinFeedback" role="status"></p>
+      </form>`, 'Secure account migration');
+
+    $('#migrationPinForm')?.addEventListener('submit', (event) => {
+      event.preventDefault();
+      const pin = $('#migrationNewPin').value;
+      const confirmation = $('#migrationConfirmPin').value;
+      const feedback = $('#migrationPinFeedback');
+      if (!isSixDigitPin(pin)) {
+        feedback.textContent = 'Your new PIN must contain exactly six digits.';
+        return;
+      }
+      if (pin !== confirmation) {
+        feedback.textContent = 'The two PIN entries do not match.';
+        return;
+      }
+      finish(pin);
+    });
+    $('#cancelMigrationPin')?.addEventListener('click', () => finish(null));
+    $('#closeModal')?.addEventListener('click', () => finish(null), { once: true });
+    $('#modalBackdrop')?.addEventListener('click', onBackdrop);
+    document.addEventListener('keydown', onKeydown);
+  });
 }
 
 function normalizePhone(value) {
@@ -1588,7 +1647,11 @@ function bindAuthUI() {
     const pin = authPassword.value;
     if (!phone) return;
     if (isMigration && (!email || !authEmail.checkValidity())) { say('Enter the email address linked to your existing account.', true); authEmail.focus(); return; }
-    if (!isSixDigitPin(pin)) { say('Your PIN must contain exactly six digits.', true); authPassword.focus(); return; }
+    if (isMigration ? (!pin || pin.length > 72) : !isSixDigitPin(pin)) {
+      say(isMigration ? 'Enter the existing password or PIN exactly as you used it before.' : 'Your PIN must contain exactly six digits.', true);
+      authPassword.focus();
+      return;
+    }
     if (isSignup && !isValidUsername(username)) {
       say('Username must be 3–20 characters using letters, numbers or underscores.', true); authUsername.focus(); return;
     }
@@ -1618,10 +1681,23 @@ function bindAuthUI() {
         const { data, error } = await supabase.auth.signInWithPassword({ email, password: pin });
         if (error) throw error;
         if (!data?.session || !data?.user) throw new Error('Existing-account sign-in did not return a session.');
+
+        let phonePin = pin;
+        if (!isSixDigitPin(phonePin)) {
+          phonePin = await requestMigrationPin();
+          if (!phonePin) {
+            await hydrate(data.user, { force: true });
+            toast('You are signed in to your existing account. Telephone linking was not completed.');
+            return;
+          }
+          const { error: pinError } = await supabase.auth.updateUser({ password: phonePin });
+          if (pinError) throw pinError;
+        }
+
         const { error: linkError } = await supabase.functions.invoke('link-phone', { body: { phone } });
         if (linkError) throw linkError;
         await hydrate(data.user, { force: true });
-        toast('Your telephone number is linked. Use it for sign-in from now on.');
+        toast('Your telephone number is linked. Use it with your six-digit PIN from now on.');
       } else {
         const { data, error } = await supabase.auth.signInWithPassword({ phone, password: pin });
         if (error) throw error;
