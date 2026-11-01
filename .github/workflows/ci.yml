@@ -20,11 +20,17 @@ jobs:
         with:
           node-version: 22
           cache: npm
-      - name: Install dependencies
+      - name: Install app dependencies
         run: npm ci
-      - name: Audit dependency vulnerabilities
+      - name: Audit app dependencies
         run: npm audit --audit-level=high
       - name: Run syntax checks and unit tests
         run: npm run check
       - name: Build production bundle
         run: npm run build
+      - name: Install pinned browser test runner
+        run: npm install --no-save --package-lock=false @playwright/test@1.64.1
+      - name: Install Chromium, Firefox and WebKit
+        run: npx playwright install --with-deps chromium firefox webkit
+      - name: Run cross-browser smoke and PWA tests
+        run: npx playwright test
