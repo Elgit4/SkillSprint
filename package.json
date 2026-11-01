@@ -1,5 +1,6 @@
 {
   "name": "skillsprint",
+  "description": "A mobile-first platform for learning technology through practical missions.",
   "private": true,
   "version": "2.0.0",
   "type": "module",
