@@ -71,14 +71,14 @@ The expansion has been applied to the connected Supabase project. Existing learn
 - HTML static checks for duplicate IDs, inline event handlers and the static app action inventory.
 - Supabase schema/migrations and security/performance advisor review against the existing project.
 
-The GitHub Actions CI workflow now runs `npm ci`, `npm run check` and `npm run build` on every push to `main` and pull request. The latest verified run passed all **81 tests** and completed the Vite production build successfully. The CI workflow now also runs an npm dependency vulnerability audit. A separate browser end-to-end test has not yet been performed.
+The GitHub Actions CI workflow now runs `npm ci`, `npm run check` and `npm run build` on every push to `main` and pull request. The latest verified run passed all **82 tests** and completed the Vite production build successfully. The CI workflow now also runs an npm dependency vulnerability audit. A separate browser end-to-end test has not yet been performed.
 
 
 ## Startup, install and export behaviour
 
 The initial branded splash is intentionally brief. Once the saved account session is restored, a separate loading surface appears while private learning data is fetched. If data hydration fails, the learner gets an actionable retry state rather than a blank dashboard. The top-bar **Install app** control opens the browser's PWA installation prompt where supported, or device-specific installation instructions; it does not download an APK or Windows installer.
 
-The Code Playground's **Download HTML** action exports the current HTML, CSS and JavaScript as a standalone HTML file. It uses the device share sheet where supported, the browser download attribute where available, and a new saveable tab as a fallback. The learner's browser may still block downloads or pop-ups according to its permissions.
+The service worker cache has been advanced to v4 so existing installations refresh the updated shell and clear the prior SkillSprint cache after activation. The Code Playground's **Download HTML** action exports the current HTML, CSS and JavaScript as a standalone HTML file. It uses the device share sheet where supported, the browser download attribute where available, and a new saveable tab as a fallback. The learner's browser may still block downloads or pop-ups according to its permissions.
 
 ## Release readiness checklist
 
