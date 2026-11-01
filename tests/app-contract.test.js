@@ -55,3 +55,13 @@ test('Supabase browser client uses publishable/anon key names only', () => {
   assert.doesNotMatch(supabase, /service_role|secret_key/i);
   assert.match(supabase, /persistSession:\s*false/);
 });
+
+
+test('lesson-answer refreshes reuse the current catalogue instead of downloading it again', () => {
+  const start = main.indexOf('async function refreshUserProgress()');
+  const end = main.indexOf('function updateContinueCards()', start);
+  assert.ok(start >= 0 && end > start, 'Expected a targeted progress refresh helper');
+  const progressRefresh = main.slice(start, end);
+  assert.doesNotMatch(progressRefresh, /fetchAllPublishedLessons|learning_paths/);
+  assert.match(main, /await refreshUserProgress\(\)/);
+});
