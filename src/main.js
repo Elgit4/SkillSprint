@@ -159,9 +159,9 @@ function startSessionInactivityMonitor() {
   lastActivityWriteAt = now;
   idleSignOutInProgress = false;
 
-  const activityEvents = ['pointerdown', 'keydown', 'touchstart', 'scroll', 'click', 'input'];
-  activityEvents.forEach((eventName) => document.addEventListener(eventName, recordSessionActivity, { passive: true }));
   if (!window.__skillsprintIdleListenersBound) {
+    const activityEvents = ['pointerdown', 'keydown', 'touchstart', 'scroll', 'click', 'input'];
+    activityEvents.forEach((eventName) => document.addEventListener(eventName, recordSessionActivity, { passive: true }));
     document.addEventListener('visibilitychange', () => {
       if (!document.hidden) checkSessionInactivity();
     });
