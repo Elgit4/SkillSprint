@@ -194,30 +194,46 @@ function openInstallInstructions() {
   const isAppleMobile = /iPad|iPhone|iPod/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
   const isAndroid = /Android/i.test(ua);
   const steps = isAppleMobile
-    ? '<ol><li>Open this SkillSprint page in <strong>Safari</strong>.</li><li>Tap the <strong>Share</strong> button.</li><li>Choose <strong>Add to Home Screen</strong>, then tap Add.</li></ol>'
+    ? '<ol><li>Open SkillSprint in <strong>Safari</strong>.</li><li>Tap <strong>Share</strong>.</li><li>Choose <strong>Add to Home Screen</strong>.</li><li>Turn on <strong>Open as Web App</strong>, then tap <strong>Add</strong>.</li></ol><p class="small muted">iPhone and iPad do not allow websites to launch the installation sheet automatically. Apple requires this Home Screen action.</p>'
     : isAndroid
-      ? '<ol><li>Open SkillSprint in <strong>Chrome</strong>.</li><li>Open the browser menu.</li><li>Choose <strong>Install app</strong> or <strong>Add to Home screen</strong>.</li></ol>'
+      ? '<ol><li>Use <strong>Chrome</strong> or <strong>Samsung Internet</strong> to open SkillSprint.</li><li>Tap the browser menu (⋮).</li><li>Choose <strong>Install app</strong> or <strong>Add to Home screen</strong>, then confirm.</li></ol><p class="small muted">When your browser makes the app-install prompt available, tapping this download icon opens it directly. Chrome may need you to have interacted with the page and viewed it for around 30 seconds first.</p>'
       : '<ol><li>Open SkillSprint in <strong>Chrome</strong> or <strong>Microsoft Edge</strong>.</li><li>Use the install icon in the address bar, or open the browser menu.</li><li>Choose <strong>Install SkillSprint</strong> or <strong>Apps → Install this site as an app</strong>.</li></ol>';
-  openModal(`<h2 id="modalTitle">Install SkillSprint</h2><p class="muted">Add SkillSprint to this device for an app-like experience and quicker access.</p><div class="install-instructions">${steps}</div><p class="muted small">Your learning account and progress stay synced through your SkillSprint account when you sign in.</p>`, 'Use SkillSprint on this device');
+  openModal('<h2 id="modalTitle">Install SkillSprint</h2><p class="muted">Add SkillSprint to your device for app-style access. Your account and learning progress remain synced.</p><div class="install-instructions">' + steps + '</div>', 'Install SkillSprint');
 }
+
 async function requestAppInstall() {
   if (syncInstalledUI()) return;
-  if (!deferredInstallPrompt) { openInstallInstructions(); return; }
+
+  // Call the native browser prompt directly from the user's button tap.
+  // It can only be shown after the browser fires beforeinstallprompt.
   const promptEvent = deferredInstallPrompt;
+  if (!promptEvent) {
+    openInstallInstructions();
+    return;
+  }
+
   deferredInstallPrompt = null;
   installButtons().forEach((button) => { button.disabled = true; });
   try {
-    await promptEvent.prompt();
+    const promptResult = promptEvent.prompt();
     const choice = await promptEvent.userChoice;
-    if (choice?.outcome === 'accepted') { document.documentElement.classList.add('app-installed'); installButtons().forEach((button) => { button.hidden = true; }); toast('SkillSprint is being installed.'); }
+    await promptResult;
+    if (choice?.outcome === 'accepted') {
+      document.documentElement.classList.add('app-installed');
+      installButtons().forEach((button) => { button.hidden = true; });
+      toast('SkillSprint is being installed.');
+    } else {
+      toast('Installation was cancelled. You can tap the download icon to try again.');
+    }
   } catch (error) {
-    console.warn('The app installation prompt could not be opened:', error);
+    console.warn('The native app installation prompt could not be opened:', error);
     openInstallInstructions();
   } finally {
     installButtons().forEach((button) => { button.disabled = false; });
     syncInstalledUI();
   }
 }
+
 function retireOfflineSupport() {
   const workerContainer = navigator.serviceWorker;
   if (workerContainer?.getRegistrations) {
