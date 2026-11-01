@@ -42,7 +42,7 @@ test('PWA manifest retains standard SkillSprint desktop and mobile icons', async
       const response = await fetch(new URL(icon.src, location.href));
       return { sizes: icon.sizes, purpose: icon.purpose || 'any', ok: response.ok };
     }));
-    const favicon = await fetch('/icons/icon.svg');
+    const favicon = await fetch('/icons/icon-192.png');
     return { display: manifest.display, icons, faviconOk: favicon.ok };
   });
   expect(result.display).toBe('standalone');
