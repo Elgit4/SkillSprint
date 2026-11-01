@@ -71,7 +71,7 @@ The expansion has been applied to the connected Supabase project. Existing learn
 - HTML static checks for duplicate IDs, inline event handlers and the static app action inventory.
 - Supabase schema/migrations and security/performance advisor review against the existing project.
 
-The GitHub Actions CI workflow now runs `npm ci`, `npm run check` and `npm run build` on every push to `main` and pull request. The latest verified run passed all **82 tests** and completed the Vite production build successfully. The CI workflow now also runs an npm dependency vulnerability audit. A separate browser end-to-end test has not yet been performed.
+The GitHub Actions CI workflow now runs `npm ci`, `npm run check` and `npm run build` on every push to `main` and pull request. CI runs the Node.js regression suite, an npm dependency vulnerability audit, a Vite production build, and Playwright browser smoke tests across Chromium, stable Chrome, stable Edge, Firefox, WebKit, Android Chrome emulation and iOS Safari emulation. Physical-device testing is still required.
 
 
 ## Startup, install and export behaviour
