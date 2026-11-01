@@ -7,23 +7,21 @@ const main = await readFile(new URL('../src/main.js', import.meta.url), 'utf8');
 const css = await readFile(new URL('../src/styles/auth.css', import.meta.url), 'utf8');
 const helper = await readFile(new URL('../src/lib/download.js', import.meta.url), 'utf8');
 
-test('startup splash is branded, responsive and has reduced-motion support', () => {
-  assert.match(html, /ssBootScreen/);
-  assert.match(html, /ss-boot-logo/);
-  assert.match(html, /ss-boot-spinner/);
-  assert.match(html, /@media\(prefers-reduced-motion:reduce\)/);
-  assert.match(html, /background:#14234b/);
-  assert.match(html, /ss-boot-spinner/);
-  assert.doesNotMatch(html, /backdrop-filter|radial-gradient|POWERED BY/);
-});
-
-test('account data hydration uses a dedicated loading and recoverable error state', () => {
-  assert.match(html, /id="appHydrationScreen"/);
-  assert.match(main, /app\?\.classList\.add\('is-hydrating'\)/);
-  assert.match(main, /appHydrationRetry/);
-  assert.match(main, /is-hydration-error/);
-  assert.match(main, /void hydrate\(data\.session\.user\)/);
-  assert.match(css, /\.app\.is-hydrating/);
+test('initial and post-login loading share one neutral spinner screen', () => {
+  const start = html.indexOf('<div id="ssBootScreen"');
+  const end = html.indexOf('</div>', start);
+  const boot = start >= 0 && end >= 0 ? html.slice(start, end + 6) : '';
+  assert.match(html, /<html lang="en" class="ss-booting">/);
+  assert.match(html, /id="ss-critical-boot"/);
+  assert.match(boot, /ss-boot-spinner/);
+  assert.doesNotMatch(boot, /<img|logo|wordmark|caption/i);
+  assert.match(html, /html\.ss-loading/);
+  assert.match(main, /function showAppLoading\(\)/);
+  assert.match(main, /function hideAppLoading\(\)/);
+  assert.match(main, /function finishInitialBoot\(\)/);
+  assert.doesNotMatch(html, /id="appHydrationScreen"/);
+  assert.doesNotMatch(main, /appHydration|is-hydrating|is-hydration-error/);
+  assert.doesNotMatch(css, /app-hydration-screen|app-hydration-card/);
 });
 
 test('install icon clearly identifies app installation rather than a file download', () => {
