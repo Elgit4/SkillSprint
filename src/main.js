@@ -1,6 +1,7 @@
 import './styles/auth.css';
 import { downloadBlob } from './lib/download.js';
 import { supabase, isSupabaseConfigured } from './lib/supabase.js';
+import { completedLessonIds, mergeLessonIds, createSerialQueue } from './lib/progress-state.js';
 import {
   createPracticeSession,
   advancePracticeSession,
@@ -37,6 +38,7 @@ const state = {
   achievements: [],
   earned: new Set(),
   completed: new Set(),
+  completedUserId: null,
   attempts: [],
   events: [],
   pathCategory: 'all',
@@ -61,6 +63,9 @@ const authSubmit = $('#authSubmit');
 const authMessage = $('#authMessage');
 let hydrationPromise = null;
 let hydrationUserId = null;
+let hydrationTicket = 0;
+let loadTicket = 0;
+const enqueueDataLoad = createSerialQueue();
 let authMode = 'signin';
 let passwordResetOpen = false;
 
@@ -843,99 +848,134 @@ async function fetchAllUserRows(table, columns, userId, timestampColumn, pageSiz
   return rows;
 }
 
-function completedLessonIds(attempts = [], events = []) {
-  const completed = new Set(
-    (attempts || [])
-      .filter((attempt) => attempt.is_correct)
-      .map((attempt) => attempt.lesson_id)
-      .filter(Boolean)
-  );
+function beginLoad(userId) {
+  return { ticket: ++loadTicket, userId };
+}
 
-  // Completion events are a second durable record written by the completion RPC.
-  // Use them as a recovery source when an attempt row is missing from a read.
-  (events || []).forEach((event) => {
-    if (event.event_type === 'lesson.completed' && event.payload?.lesson_id) {
-      completed.add(event.payload.lesson_id);
-    }
-  });
+function isCurrentLoad(load) {
+  return load.ticket === loadTicket && state.user?.id === load.userId;
+}
 
-  return completed;
+function mergeCompleted(userId, restored) {
+  const next = new Set(restored || []);
+  if (state.completedUserId === userId) {
+    state.completed = mergeLessonIds(state.completed, next);
+  } else {
+    state.completed = next;
+    state.completedUserId = userId;
+  }
 }
 
 async function refresh() {
+  return enqueueDataLoad(loadApplicationData);
+}
+
+async function loadApplicationData() {
   if (!state.user?.id) throw new Error('You need to sign in again to load your learning data.');
   const userId = state.user.id;
-  const results = await Promise.all([
-    supabase.from('profiles').select('*').eq('id', userId).single(),
-    supabase.from('user_progress').select('*').eq('user_id', userId).single(),
-    supabase.from('learning_paths').select('*').eq('is_published', true).order('sort_order').limit(100),
-    fetchAllPublishedLessons().then((data) => ({ data, error: null })),
-    supabase.from('user_achievements').select('achievement_id,unlocked_at').eq('user_id', userId),
-    fetchAllUserRows('lesson_attempts', 'id,lesson_id,is_correct,attempted_at,duration_seconds,xp_awarded', userId, 'attempted_at'),
-    fetchAllUserRows('learning_events', 'id,event_type,payload,occurred_at', userId, 'occurred_at'),
-    supabase.from('achievements').select('*').eq('is_published', true).order('name').limit(100),
-  ]);
-  const errors = results.filter((result) => result.error);
-  if (errors.length) throw new Error(errors.map((result) => result.error.message).join(' · '));
+  const load = beginLoad(userId);
+  let results;
+  try {
+    results = await Promise.all([
+      supabase.from('profiles').select('*').eq('id', userId).single(),
+      supabase.from('user_progress').select('*').eq('user_id', userId).single(),
+      supabase.from('learning_paths').select('*').eq('is_published', true).order('sort_order').limit(100),
+      fetchAllPublishedLessons().then((data) => ({ data, error: null })),
+      supabase.from('user_achievements').select('achievement_id,unlocked_at').eq('user_id', userId),
+      fetchAllUserRows('lesson_attempts', 'id,lesson_id,is_correct,attempted_at,duration_seconds,xp_awarded', userId, 'attempted_at').then((data) => ({ data, error: null })),
+      fetchAllUserRows('learning_events', 'id,event_type,payload,occurred_at', userId, 'occurred_at').then((data) => ({ data, error: null })),
+      supabase.from('achievements').select('*').eq('is_published', true).order('name').limit(100),
+    ]);
+  } catch (error) {
+    if (!isCurrentLoad(load)) return false;
+    throw error;
+  }
+  if (!isCurrentLoad(load)) return false;
+  const errors = results.filter((result) => !result || result.error);
+  if (errors.length) throw new Error(errors.map((result) => result.error?.message || 'A learning-data request returned no result.').join(' · '));
   const [profile, progress, paths, lessons, earned, attempts, events, achievements] = results.map((result) => result.data);
+  if (!profile || !progress || !Array.isArray(paths) || !Array.isArray(lessons) || !Array.isArray(earned)
+      || !Array.isArray(attempts) || !Array.isArray(events) || !Array.isArray(achievements)) {
+    throw new Error('SkillSprint received incomplete learning data. Your saved progress has not been replaced. Please try again.');
+  }
 
   state.profile = profile;
   state.progress = progress;
-  state.paths = paths || [];
-  const pathOrder = new Map((paths || []).map((path) => [path.id, Number(path.sort_order) || 0]));
-  state.lessons = (lessons || []).slice().sort((a, b) => (pathOrder.get(a.path_id) ?? 9999) - (pathOrder.get(b.path_id) ?? 9999)
+  state.paths = paths;
+  const pathOrder = new Map(paths.map((path) => [path.id, Number(path.sort_order) || 0]));
+  state.lessons = lessons.slice().sort((a, b) => (pathOrder.get(a.path_id) ?? 9999) - (pathOrder.get(b.path_id) ?? 9999)
     || (Number(a.sort_order) || 0) - (Number(b.sort_order) || 0)
     || String(a.title).localeCompare(String(b.title)));
-  state.earned = new Set((earned || []).map((row) => row.achievement_id));
-  state.attempts = attempts || [];
-  state.events = events || [];
-  state.achievements = achievements || [];
-  state.completed = completedLessonIds(state.attempts, state.events);
+  state.earned = new Set(earned.map((row) => row.achievement_id));
+  state.attempts = attempts;
+  state.events = events;
+  state.achievements = achievements;
+  mergeCompleted(userId, completedLessonIds(attempts, events));
 
   // Initialize the profile's timezone from the user's device once; after that, respect the saved setting.
   const deviceZone = localTimeZone();
   if (state.profile.timezone === 'UTC' && deviceZone && deviceZone !== 'UTC') {
     const { error } = await supabase.from('profiles').update({ timezone: deviceZone }).eq('id', userId);
-    if (!error) state.profile.timezone = deviceZone;
+    if (!error && isCurrentLoad(load)) state.profile.timezone = deviceZone;
   }
 
+  if (!isCurrentLoad(load)) return false;
   renderProfile();
   renderStats();
   renderPathCards();
   renderPractice();
   renderProgress();
   updateContinueCards();
+  return true;
 }
 
 async function refreshUserProgress() {
+  return enqueueDataLoad(loadUserProgress);
+}
+
+async function loadUserProgress() {
   if (!state.user?.id) throw new Error('You need to sign in again to load your learning data.');
   const userId = state.user.id;
-  const results = await Promise.all([
-    supabase.from('profiles').select('*').eq('id', userId).single(),
-    supabase.from('user_progress').select('*').eq('user_id', userId).single(),
-    supabase.from('user_achievements').select('achievement_id,unlocked_at').eq('user_id', userId),
-    fetchAllUserRows('lesson_attempts', 'id,lesson_id,is_correct,attempted_at,duration_seconds,xp_awarded', userId, 'attempted_at').then((data) => ({ data, error: null })),
-    fetchAllUserRows('learning_events', 'id,event_type,payload,occurred_at', userId, 'occurred_at').then((data) => ({ data, error: null })),
-    supabase.from('achievements').select('*').eq('is_published', true).order('name').limit(100),
-  ]);
-  const errors = results.filter((result) => result.error);
-  if (errors.length) throw new Error(errors.map((result) => result.error.message).join(' · '));
+  const load = beginLoad(userId);
+  let results;
+  try {
+    results = await Promise.all([
+      supabase.from('profiles').select('*').eq('id', userId).single(),
+      supabase.from('user_progress').select('*').eq('user_id', userId).single(),
+      supabase.from('user_achievements').select('achievement_id,unlocked_at').eq('user_id', userId),
+      fetchAllUserRows('lesson_attempts', 'id,lesson_id,is_correct,attempted_at,duration_seconds,xp_awarded', userId, 'attempted_at').then((data) => ({ data, error: null })),
+      fetchAllUserRows('learning_events', 'id,event_type,payload,occurred_at', userId, 'occurred_at').then((data) => ({ data, error: null })),
+      supabase.from('achievements').select('*').eq('is_published', true).order('name').limit(100),
+    ]);
+  } catch (error) {
+    if (!isCurrentLoad(load)) return false;
+    throw error;
+  }
+  if (!isCurrentLoad(load)) return false;
+  const errors = results.filter((result) => !result || result.error);
+  if (errors.length) throw new Error(errors.map((result) => result.error?.message || 'A progress request returned no result.').join(' · '));
   const [profile, progress, earned, attempts, events, achievements] = results.map((result) => result.data);
+  if (!profile || !progress || !Array.isArray(earned) || !Array.isArray(attempts)
+      || !Array.isArray(events) || !Array.isArray(achievements)) {
+    throw new Error('SkillSprint received incomplete progress data. Your saved progress has not been replaced. Please try again.');
+  }
 
   state.profile = profile;
   state.progress = progress;
-  state.earned = new Set((earned || []).map((row) => row.achievement_id));
-  state.attempts = attempts || [];
-  state.events = events || [];
-  state.achievements = achievements || [];
-  state.completed = completedLessonIds(state.attempts, state.events);
+  state.earned = new Set(earned.map((row) => row.achievement_id));
+  state.attempts = attempts;
+  state.events = events;
+  state.achievements = achievements;
+  mergeCompleted(userId, completedLessonIds(attempts, events));
 
+  if (!isCurrentLoad(load)) return false;
   renderProfile();
   renderStats();
   renderPathCards();
   renderPractice();
   renderProgress();
   updateContinueCards();
+  return true;
 }
 
 function updateContinueCards() {
@@ -1583,22 +1623,28 @@ async function hydrate(user, { force = false } = {}) {
   if (hydrationPromise && hydrationUserId === user.id) return hydrationPromise;
   if (!force && state.hydratedUserId === user.id) return;
   hydrationUserId = user.id;
+  const ticket = ++hydrationTicket;
+  const wasHydrated = state.hydratedUserId === user.id;
   state.user = user;
   showAppLoading();
   unlock();
   const work = (async () => {
     try {
-      await refresh();
+      const loaded = await refresh();
+      if (ticket !== hydrationTicket || state.user?.id !== user.id || loaded === false) return;
       state.hydratedUserId = user.id;
-      const target = location.hash.replace(/^#\/?/, '').split(/[?&]/)[0];
+      const target = location.hash.replace(/^#\\/?/, '').split(/[?&]/)[0];
       nav(knownPages.has(target) ? target : 'home');
       if (authMessage) authMessage.textContent = '';
     } catch (error) {
-      state.hydratedUserId = null;
-      lock();
+      if (ticket !== hydrationTicket || state.user?.id !== user.id) return;
+      if (!wasHydrated) {
+        state.hydratedUserId = null;
+        lock();
+      }
       say(friendlyError(error), true);
     } finally {
-      hideAppLoading();
+      if (ticket === hydrationTicket) hideAppLoading();
     }
   })();
   hydrationPromise = work;
@@ -1804,6 +1850,9 @@ async function initializeAuth() {
         });
       });
     } else if (event === 'SIGNED_OUT') {
+      ++loadTicket;
+      ++hydrationTicket;
+      state.completedUserId = null;
       idleSignOutInProgress = false;
       if (idleCheckHandle !== null) { window.clearInterval(idleCheckHandle); idleCheckHandle = null; }
       state.user = null;
@@ -1817,6 +1866,7 @@ async function initializeAuth() {
       state.attempts = [];
       state.events = [];
       state.hydratedUserId = null;
+      hideAppLoading();
       lock();
       closeModal();
       say('You have signed out.');
