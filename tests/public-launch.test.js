@@ -15,7 +15,11 @@ test('Vercel configuration applies baseline browser security headers', () => {
   assert.equal(values['X-Frame-Options'], 'DENY');
   assert.equal(values['Referrer-Policy'], 'strict-origin-when-cross-origin');
   assert.match(values['Strict-Transport-Security'], /max-age=31536000/);
-  assert.ok(headers.headers.some((entry) => entry.source === '/sw.js'));
+  const assetCache = headers.headers.find((entry) => entry.source === '/assets/(.*)');
+  assert.equal(assetCache?.headers?.[0]?.value, 'public, max-age=31536000, immutable');
+  const htmlCache = headers.headers.find((entry) => entry.source === '/');
+  assert.equal(htmlCache?.headers?.[0]?.value, 'no-cache, no-store, must-revalidate');
+  assert.ok(!headers.headers.some((entry) => entry.source === '/sw.js'));
 });
 
 test('privacy and terms are clearly marked as drafts with unfilled operator details', () => {
