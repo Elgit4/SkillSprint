@@ -5,7 +5,7 @@ SkillSprint is a mobile-first, gamified technology-skills learning app built wit
 ## User journey and app functions
 
 - **Original welcome splash:** first-visit dialog with the embedded SkillSprint logo, “Learn by building.” headline, original supporting copy and “Get started” action. The first-run state uses `skillsprint:welcome` in browser storage.
-- **Account access:** email/password registration and sign-in; registration collects public username and display name; password visibility toggle; password recovery and password update. Sessions are held in memory only, so a full page reload requires the learner to sign in again.
+- **Account access:** email/password registration and sign-in; registration collects public username and display name; password visibility toggle; password recovery and password update. Sessions persist across page reloads. The learner returns to the last visited app section after reload; sessions automatically expire after 30 minutes without activity and require sign-in again.
 - **Public identity:** username and display name are shown in the app. Email remains the private authentication and recovery identifier. Username/password login is intentionally not simulated in the browser because safely resolving usernames to private email addresses needs a server-side lookup.
 - **Home:** real XP, current level, streak, daily learning time, weekly completion activity, next lesson and learning-path summaries.
 - **Explore:** database-backed published learning paths, path search, progress bars and path lesson lists.
@@ -110,7 +110,7 @@ The Supabase Auth advisor currently reports **leaked-password protection disable
 
 ## Email-only sign-in
 
-The SkillSprint interface supports email and password only. Google sign-in is not offered. Session persistence is disabled in the browser client, so each new page load requires a fresh sign-in. A phone-number plus four-digit PIN flow is not enabled yet: phone verification and a secure credential-migration design are required before changing the live accounts.
+The SkillSprint interface supports email and password only. Google sign-in is not offered. Session persistence is enabled so learners remain on their last visited section after a page reload. A 30-minute inactivity timeout signs the learner out locally; progress remains stored in Supabase. A phone-number plus four-digit PIN flow is not enabled yet: phone verification and a secure credential-migration design are required before changing the live accounts.
 
 ## Offline functionality
 
