@@ -414,7 +414,7 @@ button[disabled],.btn[disabled]{cursor:not-allowed;opacity:.58}
 .auth-showcase:before,.auth-showcase:after{display:none}
 .auth-visual-glow{display:none}
 .auth-code-card{transform:none;background:#1b2949;box-shadow:none}
-.auth-float-card{backdrop-filter:none;box-shadow:none}
+.auth-float-card{display:none;backdrop-filter:none;box-shadow:none}
 .auth-workspace{background:#fbfaf7}
 .auth-form-eyebrow{color:#607b47;letter-spacing:.11em}
 .auth-showcase-copy h1 em{color:#c8e39a}
