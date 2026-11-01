@@ -52,11 +52,17 @@ The patch intentionally leaves `.env.local` untouched. If your current `.env.loc
 
 ## Data and feature boundaries
 
-The app renders the published catalogue in the connected database; it does not invent lessons or user activity. The inspected database currently has **5 learning paths, 5 lessons and 4 achievement definitions**. Expanding the curriculum requires adding content to the database.
+The app renders the published catalogue in the connected database; it does not invent lessons or user activity. The curriculum contains **8 learning paths**. The five core paths contain approximately 20 questions per topic; the three newer paths (Mobile App Development, Cloud & DevOps, and UI/UX & Product Design) now have **20 questions in each of their six topics**. The current curriculum migration adds 90 questions to those newer topics, bringing the published question bank to **1,388 questions** when all existing catalogue migrations and seeds are applied.
 
 The reminder switch stores a user preference only. It does not yet schedule push notifications or background reminders. The code playground stores drafts in local browser storage, not in Supabase. Google OAuth also depends on dashboard provider configuration.
 
 Lesson answers are submitted to `submit_lesson_attempt`. The client never reads private answer keys. XP is awarded server-side for a correct first completion, avoiding client-side XP fabrication.
+
+## Curriculum loading and expansion
+
+Published lessons are fetched in stable, ordered pages of 500 rows until the final partial page. The client no longer silently truncates the catalogue at 500 questions. The migration `20261101090000_expand_new_topics_to_20_questions.sql` adds 15 questions to each of the six newer topics, taking each from 5 to 20. It is safe to re-run because lesson IDs and answer-key IDs are upserted. Correct answers remain in `lesson_answer_keys`; the browser only receives question content and options.
+
+Apply the new migration to the connected Supabase project before expecting the expanded counts in the app. Existing learner progress and prior lesson IDs are retained.
 
 ## Checks performed for this package
 
