@@ -1,0 +1,60 @@
+{
+  "id": "./",
+  "name": "SkillSprint \u2014 Learn by building",
+  "short_name": "SkillSprint",
+  "description": "Learn technology through focused, practical missions. Practice skills, build projects and track your progress.",
+  "lang": "en",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "display_override": [
+    "standalone",
+    "minimal-ui"
+  ],
+  "orientation": "any",
+  "background_color": "#14234b",
+  "theme_color": "#14234b",
+  "categories": [
+    "education",
+    "productivity",
+    "developer"
+  ],
+  "icons": [
+    {
+      "src": "./icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "./icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "./icons/icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "./icons/apple-touch-icon.png",
+      "sizes": "180x180",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Explore learning paths",
+      "short_name": "Explore",
+      "url": "./#explore"
+    },
+    {
+      "name": "Practice skills",
+      "short_name": "Practice",
+      "url": "./#practice"
+    }
+  ]
+}

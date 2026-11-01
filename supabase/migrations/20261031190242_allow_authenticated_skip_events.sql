@@ -1,0 +1,1 @@
+grant insert on public.learning_events to authenticated; create policy "Users can record own skipped lesson events" on public.learning_events for insert to authenticated with check (user_id = (select auth.uid()) and event_type = 'lesson.skipped');;
