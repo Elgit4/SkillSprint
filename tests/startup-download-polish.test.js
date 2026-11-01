@@ -33,7 +33,7 @@ test('playground export has an explicit download action with cross-browser handl
   assert.match(main, /id="exportPlayground"/);
   assert.match(main, /Download HTML/);
   assert.match(main, /await downloadBlob\(/);
-  assert.match(helper, /navigator\.share/);
+  assert.match(helper, /nav\?\.share/);
   assert.match(helper, /supportsDownloadAttribute/);
   assert.match(helper, /win\?\.open/);
 });
