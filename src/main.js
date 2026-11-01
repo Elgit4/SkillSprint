@@ -866,13 +866,13 @@ function mergeCompleted(userId, restored) {
   }
 }
 
-async function refresh() {
-  return enqueueDataLoad(loadApplicationData);
+async function refresh(expectedUserId = state.user?.id) {
+  if (!expectedUserId) throw new Error('You need to sign in again to load your learning data.');
+  return enqueueDataLoad(() => loadApplicationData(expectedUserId));
 }
 
-async function loadApplicationData() {
-  if (!state.user?.id) throw new Error('You need to sign in again to load your learning data.');
-  const userId = state.user.id;
+async function loadApplicationData(userId) {
+  if (!userId || state.user?.id !== userId) return false;
   const load = beginLoad(userId);
   let results;
   try {
@@ -930,12 +930,13 @@ async function loadApplicationData() {
 }
 
 async function refreshUserProgress() {
-  return enqueueDataLoad(loadUserProgress);
+  const expectedUserId = state.user?.id;
+  if (!expectedUserId) throw new Error('You need to sign in again to load your learning data.');
+  return enqueueDataLoad(() => loadUserProgress(expectedUserId));
 }
 
-async function loadUserProgress() {
-  if (!state.user?.id) throw new Error('You need to sign in again to load your learning data.');
-  const userId = state.user.id;
+async function loadUserProgress(userId) {
+  if (!userId || state.user?.id !== userId) return false;
   const load = beginLoad(userId);
   let results;
   try {
@@ -1630,10 +1631,10 @@ async function hydrate(user, { force = false } = {}) {
   unlock();
   const work = (async () => {
     try {
-      const loaded = await refresh();
+      const loaded = await refresh(user.id);
       if (ticket !== hydrationTicket || state.user?.id !== user.id || loaded === false) return;
       state.hydratedUserId = user.id;
-      const target = location.hash.replace(/^#\\/?/, '').split(/[?&]/)[0];
+      const target = location.hash.replace(/^#\/?/, '').split(/[?&]/)[0];
       nav(knownPages.has(target) ? target : 'home');
       if (authMessage) authMessage.textContent = '';
     } catch (error) {
