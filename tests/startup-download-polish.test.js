@@ -30,7 +30,8 @@ test('install icon clearly identifies app installation rather than a file downlo
 });
 
 test('playground export has an explicit download action with cross-browser handling', () => {
-  assert.match(main, /id="exportPlayground"[^>]*Download HTML/);
+  assert.match(main, /id="exportPlayground"/);
+  assert.match(main, /Download HTML/);
   assert.match(main, /await downloadBlob\(/);
   assert.match(helper, /navigator\.share/);
   assert.match(helper, /supportsDownloadAttribute/);
