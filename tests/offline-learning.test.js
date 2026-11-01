@@ -34,3 +34,11 @@ test('service worker supports same-origin offline app-shell and static asset fal
 test('the app does not expose Google OAuth as a sign-in path', () => {
   assert.doesNotMatch(main, /signInWithOAuth|googleSignIn|provider:\s*['"]google['"]/i);
 });
+
+test('learner attempts and activity events are paginated completely for offline progress', () => {
+  assert.match(main, /async function fetchAllUserRows\(/);
+  assert.match(main, /fetchAllUserRows\('lesson_attempts'/);
+  assert.match(main, /fetchAllUserRows\('learning_events'/);
+  assert.match(main, /\.order\('id', \{ ascending: false \}\)/);
+  assert.match(main, /\.range\(from, to\)/);
+});
