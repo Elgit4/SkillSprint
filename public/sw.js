@@ -1,5 +1,5 @@
 /* SkillSprint offline app shell — versioned to allow safe updates. */
-const VERSION = 'skillsprint-shell-v4';
+const VERSION = 'skillsprint-shell-v5';
 const SHELL_CACHE = `${VERSION}-shell`;
 const ASSET_CACHE = `${VERSION}-assets`;
 const SHELL_URLS = [
@@ -12,7 +12,8 @@ const SHELL_URLS = [
   './icons/apple-touch-icon.png',
   './brand/skillsprint-wordmark.png',
   './brand/skillsprint-wordmark-light.png',
-  './avatars/avatar-06.svg'
+  './avatars/avatar-06.svg',
+  './offline.html'
 ];
 
 self.addEventListener('install', (event) => {
@@ -63,7 +64,7 @@ self.addEventListener('fetch', (event) => {
   }
 
   // Cache same-origin static resources only; do not cache API data or authentication requests.
-  if (!['script', 'style', 'image', 'font'].includes(request.destination)) return;
+  if (!['script', 'style', 'image', 'font', 'document'].includes(request.destination)) return;
   event.respondWith((async () => {
     const cache = await caches.open(ASSET_CACHE);
     const cached = await cache.match(request);
@@ -71,6 +72,6 @@ self.addEventListener('fetch', (event) => {
       if (response.ok) cache.put(request, response.clone());
       return response;
     }).catch(() => null);
-    return cached || await update || new Response('', { status: 504 });
+    return cached || await update || (request.destination === 'document' ? (await cache.match(new URL('./offline.html', self.registration.scope))) : null) || new Response('', { status: 504 });
   })());
 });
