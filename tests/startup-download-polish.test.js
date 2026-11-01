@@ -10,7 +10,7 @@ const helper = await readFile(new URL('../src/lib/download.js', import.meta.url)
 test('startup splash is branded, responsive and has reduced-motion support', () => {
   assert.match(html, /ssBootScreen/);
   assert.match(html, /ss-boot-logo/);
-  assert.match(html, /ss-boot-progress/);
+  assert.match(html, /ss-boot-spinner/);
   assert.match(html, /@media\(prefers-reduced-motion:reduce\)/);
   assert.match(html, /background:#14234b/);
   assert.match(html, /ss-boot-spinner/);
