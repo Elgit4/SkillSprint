@@ -1630,7 +1630,11 @@ function bindAuthUI() {
         toast('You are signed in.');
       }
     } catch (error) {
-      say(friendlyError(error), true);
+      const rawAuthError = error?.message || String(error || '');
+      const message = isMigration && /invalid login credentials/i.test(rawAuthError)
+        ? 'The existing account email or six-digit PIN was rejected. Check that you are using the email and PIN from your last successful email sign-in. Your telephone number has not been linked yet.'
+        : friendlyError(error);
+      say(message, true);
     } finally {
       authSubmit.disabled = false;
       authSubmit.querySelector('span').textContent = isSignup ? 'Create account' : isMigration ? 'Sign in & link number' : 'Sign in';
