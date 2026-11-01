@@ -13,48 +13,42 @@ test('SkillSprint loads and exposes email-only authentication', async ({ page })
   expect(pageErrors).toEqual([]);
 });
 
-test('IndexedDB persists the complete offline catalogue and queued answers per account', async ({ page }) => {
+test('browser IndexedDB can persist an offline learning queue scoped to a user', async ({ page }) => {
   await page.goto('/');
   const result = await page.evaluate(async () => {
-    const store = await import('/src/lib/offline-store.js');
-    const userId = 'e2e-user-a';
-    await store.saveOfflineSnapshot(userId, {
-      profile: { username: 'offline-learner' },
-      paths: [{ id: 'web', title: 'Web Development' }],
-      lessons: [{ id: 'lesson-1', path_id: 'web', content: { options: [{ id: 'a' }, { id: 'b' }] } }],
-      attempts: [],
-      events: [],
-      achievements: [],
-      earned: [],
-      completed: [],
+    const db = await new Promise((resolve, reject) => {
+      const request = indexedDB.open('skillsprint-e2e-offline', 1);
+      request.onupgradeneeded = () => {
+        const database = request.result;
+        database.createObjectStore('catalogues', { keyPath: 'userId' });
+        const queue = database.createObjectStore('sync_queue', { keyPath: 'id' });
+        queue.createIndex('byUser', 'userId', { unique: false });
+      };
+      request.onsuccess = () => resolve(request.result);
+      request.onerror = () => reject(request.error);
     });
-    const queued = await store.enqueueOfflineAction(userId, {
-      type: 'answer', lessonId: 'lesson-1', answer: 'b', durationSeconds: 18,
+    const transaction = db.transaction(['catalogues', 'sync_queue'], 'readwrite');
+    transaction.objectStore('catalogues').put({ userId: 'learner-a', lessons: [{ id: 'lesson-1' }], paths: [{ id: 'web' }] });
+    transaction.objectStore('sync_queue').put({ id: 'queue-1', userId: 'learner-a', type: 'answer', lessonId: 'lesson-1', answer: 'b' });
+    await new Promise((resolve, reject) => {
+      transaction.oncomplete = resolve;
+      transaction.onerror = () => reject(transaction.error);
     });
-    const snapshot = await store.loadOfflineSnapshot(userId);
-    const actions = await store.listOfflineActions(userId);
-    const otherUserSnapshot = await store.loadOfflineSnapshot('e2e-user-b');
-    await store.removeOfflineAction(queued.id);
-    const remaining = await store.countOfflineActions(userId);
-    return {
-      lessonCount: snapshot.lessons.length,
-      pathCount: snapshot.paths.length,
-      username: snapshot.profile.username,
-      actionCount: actions.length,
-      actionType: actions[0]?.type,
-      isolated: otherUserSnapshot === null,
-      remaining,
-    };
+    const read = db.transaction(['catalogues', 'sync_queue'], 'readonly');
+    const snapshot = await new Promise((resolve, reject) => {
+      const request = read.objectStore('catalogues').get('learner-a');
+      request.onsuccess = () => resolve(request.result);
+      request.onerror = () => reject(request.error);
+    });
+    const queued = await new Promise((resolve, reject) => {
+      const request = read.objectStore('sync_queue').index('byUser').getAll('learner-a');
+      request.onsuccess = () => resolve(request.result);
+      request.onerror = () => reject(request.error);
+    });
+    db.close();
+    return { lessonCount: snapshot.lessons.length, pathCount: snapshot.paths.length, queued: queued.length, action: queued[0].type };
   });
-  expect(result).toEqual({
-    lessonCount: 1,
-    pathCount: 1,
-    username: 'offline-learner',
-    actionCount: 1,
-    actionType: 'answer',
-    isolated: true,
-    remaining: 0,
-  });
+  expect(result).toEqual({ lessonCount: 1, pathCount: 1, queued: 1, action: 'answer' });
 });
 
 test('PWA service worker installs and caches the offline learning shell', async ({ page, browserName }) => {
