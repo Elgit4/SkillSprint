@@ -9,7 +9,7 @@ Status is based on repository and connected-service checks as of 1 November 2026
 - [x] IndexedDB storage module created for user-scoped lesson snapshots and offline answer/skip queue.
 - [x] Service worker cache advanced to v5 with an offline document fallback.
 - [x] Offline answer submissions remain pending until server-side validation; client does not award XP offline.
-- [x] CI has Chromium, Firefox and WebKit Playwright smoke tests configured.
+- [x] CI has Playwright smoke tests configured for Chromium, stable Chrome, stable Edge, Firefox, WebKit, Android Chrome emulation and iOS Safari emulation.
 - [ ] Confirm the latest cross-browser workflow is green.
 - [ ] Test actual signed-in offline lesson flow with a dedicated staging Supabase account in all three engines.
 - [ ] Test Android Chrome and iOS Safari on physical devices, including install, offline reload, storage persistence and reconnect sync.
