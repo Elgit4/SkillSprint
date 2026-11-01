@@ -52,6 +52,6 @@ test('full hydration wraps paginated user-row arrays before reading Supabase res
   assert.ok(start >= 0 && end > start, 'Expected the full application data loader');
   const loader = main.slice(start, end);
   assert.equal(loader.split('fetchAllUserRows(').length - 1, 2);
-  assert.equal(loader.split('.then((data) => ({ data, error: null }))').length - 1, 2,
+  assert.equal(loader.split('.then((data) => ({ data, error: null }))').length - 1, 3,
     'Both lesson attempts and learning events must be adapted to the common result shape');
 });
