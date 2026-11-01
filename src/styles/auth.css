@@ -576,3 +576,40 @@ button[disabled],.btn[disabled]{cursor:not-allowed;opacity:.58}
   .auth-form { gap: 10px; }
   .auth-privacy { margin-top: 10px; }
 }
+
+
+/* Authentication readability: make supporting copy and field labels easier to scan. */
+.auth-edition,
+.auth-showcase-legal,
+.auth-feature small,
+.auth-feature > span,
+.auth-password-rule,
+.auth-form-eyebrow,
+.auth-privacy,
+.auth-workspace-footer,
+.auth-hint {
+  font-size: 11px !important;
+  line-height: 1.5;
+}
+.auth-overline,
+.auth-form-meta,
+.auth-message,
+.auth-switch {
+  font-size: 12px !important;
+}
+.auth-overline { letter-spacing: .12em; }
+.auth-code-top,
+.auth-code-footer { font-size: 10px !important; }
+.auth-float-card b,
+.auth-feature b { font-size: 12px !important; }
+.auth-float-card small { font-size: 10px !important; line-height: 1.4; }
+.auth-field label,
+.auth-label-row label { font-size: 13px !important; }
+.auth-input-wrap input { font-size: 14px !important; }
+.auth-form-heading p { font-size: 13px !important; }
+.auth-form-meta { line-height: 1.45; }
+.auth-forgot,
+.auth-switch button,
+.auth-install-link { font-size: 12px !important; }
+.auth-submit { font-size: 13px !important; }
+
