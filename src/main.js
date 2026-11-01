@@ -772,6 +772,27 @@ async function refreshFromOfflineCache(userId) {
   return true;
 }
 
+async function fetchAllUserRows(table, columns, userId, timestampColumn, pageSize = 500) {
+  const rows = [];
+  let from = 0;
+  while (true) {
+    const to = from + pageSize - 1;
+    const { data, error } = await supabase
+      .from(table)
+      .select(columns)
+      .eq('user_id', userId)
+      .order(timestampColumn, { ascending: false })
+      .order('id', { ascending: false })
+      .range(from, to);
+    if (error) throw error;
+    const page = data || [];
+    rows.push(...page);
+    if (page.length < pageSize) break;
+    from += page.length;
+  }
+  return rows;
+}
+
 async function refresh() {
   if (!state.user?.id) throw new Error('You need to sign in again to load your learning data.');
   const userId = state.user.id;
@@ -781,8 +802,8 @@ async function refresh() {
     supabase.from('learning_paths').select('*').eq('is_published', true).order('sort_order').limit(100),
     fetchAllPublishedLessons().then((data) => ({ data, error: null })),
     supabase.from('user_achievements').select('achievement_id,unlocked_at').eq('user_id', userId),
-    supabase.from('lesson_attempts').select('lesson_id,is_correct,attempted_at,duration_seconds,xp_awarded').eq('user_id', userId).order('attempted_at', { ascending: false }).limit(500),
-    supabase.from('learning_events').select('event_type,payload,occurred_at').eq('user_id', userId).order('occurred_at', { ascending: false }).limit(500),
+    fetchAllUserRows('lesson_attempts', 'id,lesson_id,is_correct,attempted_at,duration_seconds,xp_awarded', userId, 'attempted_at'),
+    fetchAllUserRows('learning_events', 'id,event_type,payload,occurred_at', userId, 'occurred_at'),
     supabase.from('achievements').select('*').eq('is_published', true).order('name').limit(100),
   ]);
   const errors = results.filter((result) => result.error);
