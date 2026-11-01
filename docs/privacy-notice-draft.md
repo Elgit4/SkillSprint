@@ -46,7 +46,7 @@ Before publication, document the applicable lawful basis for each purpose and ex
 
 The current application uses **Supabase** for authentication and its hosted PostgreSQL database. The application also loads some typefaces from Google Fonts. The production web host has not yet been confirmed; update this section after the deployment provider and project region are selected.
 
-- **Supabase:** [CONFIRM PROJECT REGION, DATA PROCESSING AGREEMENT, SUBPROCESSORS, BACKUP/LOG RETENTION AND INTERNATIONAL TRANSFER SAFEGUARDS].
+- **Supabase:** the current SkillSprint project is hosted in the **West EU (Ireland) region (`eu-west-1`)**. Supabase documents the selected region as the primary location for the project's database, Auth service and Storage objects. This does not, by itself, prove that every backup, log, support or subprocessor activity remains in that region. Confirm the current Data Processing Agreement, subprocessors, backup/log retention and international-transfer safeguards before publication.
 - **Web hosting/CDN:** [INSERT FINAL PROVIDER, REGION, PROCESSOR TERMS AND RETENTION].
 - **Google Fonts:** font requests may disclose technical request information to Google when the fonts are loaded. Consider self-hosting the fonts if this disclosure is not necessary.
 
