@@ -1527,7 +1527,7 @@ async function hydrate(user, { force = false } = {}) {
       try { restored = await refreshFromOfflineCache(user.id); }
       catch (cacheError) { console.warn('Could not read saved offline learning data:', cacheError); }
       if (restored) {
-        const target = location.hash.replace(/^#\\/?/, '').split(/[?&]/)[0];
+        const target = location.hash.replace(/^#\/?/, '').split(/[?&]/)[0];
         nav(knownPages.has(target) ? target : 'home');
         app?.classList.remove('is-hydrating', 'is-hydration-error');
         toast('Offline learning is ready. Your saved actions will sync when you reconnect.');
