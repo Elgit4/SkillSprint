@@ -1527,7 +1527,7 @@ function isSixDigitPin(value) {
 
 async function startPinRecovery(email) {
   const cleanEmail = String(email || '').trim().toLowerCase();
-  if (!cleanEmail || !/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(cleanEmail)) {
+  if (!cleanEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(cleanEmail)) {
     say('Enter the email address linked to your account first.', true);
     authEmail?.focus();
     return;
