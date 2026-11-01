@@ -5,7 +5,7 @@ SkillSprint is a mobile-first, gamified technology-skills learning app built wit
 ## User journey and app functions
 
 - **Original welcome splash:** first-visit dialog with the embedded SkillSprint logo, “Learn by building.” headline, original supporting copy and “Get started” action. The first-run state uses `skillsprint:welcome` in browser storage.
-- **Account access:** email/password registration and sign-in; registration collects public username and display name; password visibility toggle; password recovery and password update; optional Google OAuth button.
+- **Account access:** email/password registration and sign-in; registration collects public username and display name; password visibility toggle; password recovery and password update. Sessions are held in memory only, so a full page reload requires the learner to sign in again.
 - **Public identity:** username and display name are shown in the app. Email remains the private authentication and recovery identifier. Username/password login is intentionally not simulated in the browser because safely resolving usernames to private email addresses needs a server-side lookup.
 - **Home:** real XP, current level, streak, daily learning time, weekly completion activity, next lesson and learning-path summaries.
 - **Explore:** database-backed published learning paths, path search, progress bars and path lesson lists.
@@ -46,7 +46,7 @@ The patch intentionally leaves `.env.local` untouched. If your current `.env.loc
 
 - For local development without a verified SMTP sender, email confirmation can be turned off in Supabase Auth while testing. Turn it back on for public use and configure a verified SMTP sender.
 - Add the exact local development URL (including the port shown by Vite) to Supabase Auth → URL Configuration → Redirect URLs.
-- Google login works only after the Google provider has been enabled and configured in Supabase Auth. It is an optional sign-in method.
+- The public app exposes email/password authentication only; Google OAuth is not offered.
 - Passwords must be at least eight characters. A four-digit PIN is not used as an internet account password.
 - Supabase's password-leak protection should be enabled before public launch.
 
@@ -54,13 +54,13 @@ The patch intentionally leaves `.env.local` untouched. If your current `.env.loc
 
 The app renders the published catalogue in the connected database; it does not invent lessons or user activity. The curriculum contains **8 learning paths**. The five core paths contain approximately 20 questions per topic; the three newer paths (Mobile App Development, Cloud & DevOps, and UI/UX & Product Design) now have **20 questions in each of their six topics**. The current curriculum migration adds 90 questions to those newer topics, bringing the published question bank to **1,388 questions** when all existing catalogue migrations and seeds are applied.
 
-The reminder switch stores a user preference only. It does not yet schedule push notifications or background reminders. The code playground stores drafts in local browser storage, not in Supabase. Google OAuth also depends on dashboard provider configuration.
+The reminder switch stores a user preference only. It does not yet schedule push notifications or background reminders. The code playground stores drafts in local browser storage, not in Supabase. Offline lesson operation is disabled for this release.
 
 Lesson answers are submitted to `submit_lesson_attempt`. The client never reads private answer keys. XP is awarded server-side for a correct first completion, avoiding client-side XP fabrication.
 
 ## Curriculum loading and expansion
 
-Published lessons are fetched in stable, ordered pages of 500 rows until the final partial page. The client no longer silently truncates the catalogue at 500 questions. The migration `20261101090000_expand_new_topics_to_20_questions.sql` adds 15 questions to each of the six newer topics, taking each from 5 to 20. A follow-up migration defensively removes any legacy path-only IDs and re-upserts the correctly topic-scoped question IDs. Both migrations are idempotent. Correct answers remain in `lesson_answer_keys`; the browser only receives question content and options.
+Published lessons are fetched in stable, ordered pages of up to 1,000 rows until the final partial page. The client no longer silently truncates the catalogue at 500 questions. The migration `20261101090000_expand_new_topics_to_20_questions.sql` adds 15 questions to each of the six newer topics, taking each from 5 to 20. A follow-up migration defensively removes any legacy path-only IDs and re-upserts the correctly topic-scoped question IDs. Both migrations are idempotent. Correct answers remain in `lesson_answer_keys`; the browser only receives question content and options.
 
 The expansion has been applied to the connected Supabase project. Existing learner progress and original lesson IDs are retained.
 
@@ -76,9 +76,9 @@ The GitHub Actions CI workflow now runs `npm ci`, `npm run check` and `npm run b
 
 ## Startup, install and export behaviour
 
-The initial branded splash is intentionally brief. Once the saved account session is restored, a separate loading surface appears while private learning data is fetched. If data hydration fails, the learner gets an actionable retry state rather than a blank dashboard. The top-bar **Install app** control opens the browser's PWA installation prompt where supported, or device-specific installation instructions; it does not download an APK or Windows installer.
+One unbranded spinner is reused for initial startup and signed-in data loading. It contains no logo, label or decorative animation. Failed data loads return the learner to the sign-in screen with an actionable error. The top-bar **Install app** control opens the browser's PWA installation prompt where supported, or device-specific installation instructions; it does not download an APK or Windows installer.
 
-The service worker cache has been advanced to v4 so existing installations refresh the updated shell and clear the prior SkillSprint cache after activation. The Code Playground's **Download HTML** action exports the current HTML, CSS and JavaScript as a standalone HTML file. It uses the device share sheet where supported, the browser download attribute where available, and a new saveable tab as a fallback. The learner's browser may still block downloads or pop-ups according to its permissions.
+The Code Playground's **Download HTML** action exports the current HTML, CSS and JavaScript as a standalone HTML file. It uses the device share sheet where supported, the browser download attribute where available, and a new saveable tab as a fallback. The learner's browser may still block downloads or pop-ups according to its permissions.
 
 ## Release readiness checklist
 
@@ -103,22 +103,22 @@ The Supabase Auth advisor currently reports **leaked-password protection disable
 
 ### Known launch limitations
 
-- The service worker caches the application shell and static assets, not the live Supabase learning catalogue or account data. Full offline lessons are not currently promised.
+- Offline learning, browser storage snapshots and service-worker caching have been intentionally disabled. Lesson answers and skips require a live connection.
 - No automated real-browser end-to-end suite is configured yet. CI validates syntax, unit/contract tests, dependency audit and production compilation, but device-level install/download and auth journeys still require browser testing.
 - Publication drafts are in `docs/privacy-notice-draft.md` and `docs/terms-of-use-draft.md`; they must be completed and legally approved before release. Production SMTP and Supabase provider settings also require final review.
 
 
 ## Email-only sign-in
 
-The SkillSprint interface supports email and password only. Google sign-in has been removed from the application. Disable the Google provider in Supabase Authentication → Sign In / Providers as a separate dashboard configuration; the connected project tools do not expose that provider setting.
+The SkillSprint interface supports email and password only. Google sign-in is not offered. Session persistence is disabled in the browser client, so each new page load requires a fresh sign-in. A phone-number plus four-digit PIN flow is not enabled yet: phone verification and a secure credential-migration design are required before changing the live accounts.
 
-## Offline learning
+## Offline functionality
 
-After a learner signs in and opens SkillSprint while connected, the app stores the published paths, full lesson catalogue and that learner's progress in a user-scoped IndexedDB database. The service worker caches the application shell and static resources. When offline, the learner can reopen cached lessons and practise. Answers and skips are queued on that device and submitted to the existing authenticated Supabase RPCs after connectivity returns. Offline answers remain pending until the server validates them; correctness and XP are never guessed locally. The app requests persistent browser storage where supported. Offline data is specific to the same signed-in account and browser/device. First-time use still requires an internet connection, and browser storage eviction can remove local copies.
+Offline learning, IndexedDB snapshots, queued answers and the service worker are disabled for this release. SkillSprint requires an active internet connection for lesson submission and progress updates. The app unregisters older service workers and clears only its own `skillsprint-*` browser caches on launch.
 
 ## Browser and device coverage
 
-CI runs automated smoke tests on Chromium, Firefox and WebKit (Safari's browser engine). This checks application startup, sign-in UI, manifest and service-worker behavior. Real iOS Safari and Android Chrome installation, push-free offline operation and file saving must also be tested on physical devices before public launch.
+CI runs automated smoke tests on Chromium, Firefox and WebKit (Safari's browser engine). This checks application startup, sign-in UI, manifest, icon and install behaviour (offline service-worker caching is intentionally disabled). Real iOS Safari and Android Chrome installation and file saving must also be tested on physical devices before public launch.
 
 
 ## Public launch documents
