@@ -817,7 +817,11 @@ async function refresh() {
   updateContinueCards();
   try {
     await cacheCurrentLearningState(userId);
-    await syncOfflineQueue(userId);
+    const syncResult = await syncOfflineQueue(userId);
+    if (syncResult.synced > 0) {
+      await refresh();
+      return;
+    }
   } catch (offlineError) {
     console.warn('Could not update SkillSprint offline learning data:', offlineError);
   }
