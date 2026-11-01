@@ -6,14 +6,13 @@ Status is based on repository and connected-service checks as of 1 November 2026
 
 - [x] Email/password sign-in is the only authentication option exposed in the application UI and client code.
 - [x] Published lesson catalogue is paginated rather than capped at the first 500 records.
-- [x] IndexedDB storage module created for user-scoped lesson snapshots and offline answer/skip queue.
-- [x] Service worker cache advanced to v5 with an offline document fallback.
-- [x] Offline answer submissions remain pending until server-side validation; client does not award XP offline.
+- [x] Offline learning snapshots, answer queues and service-worker caching removed for this release.
+- [x] Existing SkillSprint service-worker registrations are unregistered and app-owned legacy caches cleared at startup.
+- [x] Browser session persistence disabled so a fresh sign-in is required after a full page reload.
 - [x] CI has Playwright smoke tests configured for Chromium, stable Chrome, stable Edge, Firefox, WebKit, Android Chrome emulation and iOS Safari emulation.
 - [ ] Confirm the latest cross-browser workflow is green.
-- [ ] Test actual signed-in offline lesson flow with a dedicated staging Supabase account in all three engines.
-- [ ] Test Android Chrome and iOS Safari on physical devices, including install, offline reload, storage persistence and reconnect sync.
-- [ ] Test interrupted requests, duplicate/retried queue actions, expired sessions and device storage eviction.
+- [ ] Test Android Chrome and iOS Safari on physical devices, including installation, fresh sign-in after reload, interrupted requests and expired sessions.
+- [ ] Confirm the selected phone-authentication approach. Do not use a four-digit PIN as the sole internet credential; phone sign-in requires verified phone identities and a configured SMS provider.
 - [ ] Add an account deletion/export workflow and test it end to end.
 - [ ] Configure uptime/error monitoring and a tested rollback procedure.
 
@@ -54,7 +53,8 @@ Official Ghana DPC resources:
 - [ ] Confirm HTTPS/TLS and canonical www/apex redirect.
 - [ ] Configure production environment variables in the host; do not commit `.env.local`.
 - [ ] Set the final domain as Supabase Auth Site URL and allowlisted redirect URL.
-- [ ] Deploy a reviewed production commit and verify the live build, service worker and email links.
+- [x] Deploy a production build to the Vercel-assigned `skillsprint-eltech.vercel.app` URL and confirm the deployment status is READY.
+- [ ] Verify the live sign-in, email confirmation and password recovery journeys in a real browser.
 - [ ] Configure domain renewal and registrar account recovery.
 
 ## Accessibility, performance and content
@@ -69,8 +69,9 @@ Official Ghana DPC resources:
 
 ## Current blockers
 
-1. The connected Vercel account returned no accessible teams, projects or domains, so the app has not been deployed or attached to a production domain through that account.
-2. Available domain search results: `learnskillsprint.com` and `skillsprintgh.com` were available at USD 11.25 for one year; `skillsprint.dev` was available at USD 13 for one year. Availability can change. No domain has been purchased.
+1. The Vercel project is connected to GitHub and has a READY production deployment at `https://skillsprint-eltech.vercel.app`. No custom domain has been purchased; the Vercel-provided domain is sufficient for the current release.
+2. The requested phone-number plus four-digit PIN login has not been enabled. Existing accounts do not have verified phone numbers, and an SMS provider has not been configured. Use a verified phone flow with a secure one-time code or another properly protected credential; do not weaken Supabase password policy to four digits.
 3. Google OAuth has been removed from the code, but the provider still needs to be disabled in the Supabase Dashboard.
-4. DPC registration, legal operator identity, privacy contact and legal approval are not yet supplied/verified.
-5. The browser workflow has been configured; its latest run must pass before claiming cross-browser verification. Real-device testing remains required.
+4. Supabase leaked-password protection is still reported as disabled and must be enabled before public launch.
+5. DPC registration, legal operator identity, privacy contact and legal approval are not yet supplied/verified.
+6. The latest browser workflow must pass, and real-device verification remains required.
