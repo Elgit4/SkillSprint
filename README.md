@@ -105,7 +105,7 @@ The Supabase Auth advisor currently reports **leaked-password protection disable
 
 - The service worker caches the application shell and static assets, not the live Supabase learning catalogue or account data. Full offline lessons are not currently promised.
 - No automated real-browser end-to-end suite is configured yet. CI validates syntax, unit/contract tests, dependency audit and production compilation, but device-level install/download and auth journeys still require browser testing.
-- Privacy/terms pages and production email/OAuth provider configuration were not found in the repository and must be completed before public release.
+- Publication drafts are in `docs/privacy-notice-draft.md` and `docs/terms-of-use-draft.md`; they must be completed and legally approved before release. Production SMTP and Supabase provider settings also require final review.
 
 
 ## Email-only sign-in
@@ -119,3 +119,12 @@ After a learner signs in and opens SkillSprint while connected, the app stores t
 ## Browser and device coverage
 
 CI runs automated smoke tests on Chromium, Firefox and WebKit (Safari's browser engine). This checks application startup, sign-in UI, manifest and service-worker behavior. Real iOS Safari and Android Chrome installation, push-free offline operation and file saving must also be tested on physical devices before public launch.
+
+
+## Public launch documents
+
+- [Privacy notice publication draft](docs/privacy-notice-draft.md)
+- [Terms of use publication draft](docs/terms-of-use-draft.md)
+- [Public launch checklist](docs/public-launch-checklist.md)
+
+The legal documents contain explicit placeholders and must not be published until the legal operator identity, address, privacy contact, age policy, DPC registration details, processor/transfer information and retention schedule have been verified.
