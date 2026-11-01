@@ -193,12 +193,12 @@ function openInstallInstructions() {
   const ua = navigator.userAgent || '';
   const isAppleMobile = /iPad|iPhone|iPod/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
   const isAndroid = /Android/i.test(ua);
-  const steps = isAppleMobile
-    ? '<p><strong>Use the Safari app itself</strong> — not the browser opened inside ChatGPT, WhatsApp, Instagram, or another app.</p><ol><li>Open the <strong>Safari</strong> app and type <strong>skillsprint-eltech.vercel.app</strong> in its address bar.</li><li>Tap the <strong>Page Menu (•••)</strong> beside the address bar, then tap <strong>Share</strong>. (On some Safari layouts, tap the Share button directly.)</li><li>In the Share sheet, scroll <strong>down past the app icons</strong> to the website actions. Look for <strong>Add to Home Screen</strong>.</li><li>If it is not listed, scroll to the bottom of the actions and tap <strong>Edit Actions</strong>. Add <strong>Add to Home Screen</strong>, return to the Share sheet, and select it.</li><li>Keep <strong>Open as Web App</strong> enabled when shown, then tap <strong>Add</strong>.</li></ol><p class="small muted"><strong>Still missing?</strong> Close the sheet and confirm the page is open in Safari, not an in-app browser. You can also open the same address in Chrome for iPhone, tap its Share button, and look for <strong>Add to Home Screen</strong>.</p><p class="small"><a href="https://support.apple.com/guide/iphone/open-as-web-app-iphea86e5236/27/ios/27" target="_blank" rel="noopener noreferrer">See Apple\'s step-by-step iPhone guide</a></p><p class="small muted">iOS does not let websites launch the install sheet themselves. You must confirm Add to Home Screen once; then launch SkillSprint from its new Home Screen icon.</p>'
+  const message = isAppleMobile
+    ? 'In Safari, tap Share, then Add to Home Screen.'
     : isAndroid
-      ? '<ol><li>Use <strong>Chrome</strong> or <strong>Samsung Internet</strong> to open SkillSprint.</li><li>Tap the browser menu (⋮).</li><li>Choose <strong>Install app</strong> or <strong>Add to Home screen</strong>, then confirm.</li></ol><p class="small muted">When your browser makes the app-install prompt available, tapping this download icon opens it directly. Chrome may need you to have interacted with the page and viewed it for around 30 seconds first.</p>'
-      : '<ol><li>Open SkillSprint in <strong>Chrome</strong> or <strong>Microsoft Edge</strong>.</li><li>Use the install icon in the address bar, or open the browser menu.</li><li>Choose <strong>Install SkillSprint</strong> or <strong>Apps → Install this site as an app</strong>.</li></ol>';
-  openModal('<h2 id="modalTitle">Install SkillSprint</h2><p class="muted">Add SkillSprint to your device for app-style access. Your account and learning progress remain synced.</p><div class="install-instructions">' + steps + '</div>', 'Install SkillSprint');
+      ? 'Open your browser menu and select Install app or Add to Home screen.'
+      : 'Use the install icon in your browser address bar, or select Install from the browser menu.';
+  openModal('<h2 id="modalTitle">Install SkillSprint</h2><p class="muted">' + message + '</p>', 'Install SkillSprint');
 }
 
 async function requestAppInstall() {
