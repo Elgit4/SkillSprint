@@ -57,7 +57,7 @@ self.addEventListener('fetch', (event) => {
         return response;
       } catch {
         const cache = await caches.open(SHELL_CACHE);
-        return (await cache.match(request)) || (await cache.match(new URL('./', self.registration.scope))) || new Response('SkillSprint is offline. Reconnect to the internet and reload this page.', { status: 503, headers: { 'Content-Type': 'text/plain; charset=utf-8' } });
+        return (await cache.match(request)) || (await cache.match(new URL('./', self.registration.scope))) || (await cache.match(new URL('./offline.html', self.registration.scope))) || new Response('SkillSprint is offline. Reconnect to the internet and reload this page.', { status: 503, headers: { 'Content-Type': 'text/plain; charset=utf-8' } });
       }
     })());
     return;
