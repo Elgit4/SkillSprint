@@ -11,7 +11,7 @@ test('catalogue migration adds three published technical learning paths', () => 
   assert.match(main, /mobile: 'phone', cloud: 'activity', design: 'sparkle'/);
 });
 
-test('catalogue migrations contain 120 unique questions and private answer keys', () => {
+test('catalogue migrations contain 120 unique topic-scoped questions and private answer keys', () => {
   const ids = [...sql.matchAll(/\\('((?:mobile|cloud|design)-(?:[a-z]+-)?\\d+)'/g)].map((match) => match[1]);
   assert.equal(ids.length, 120);
   assert.equal(new Set(ids).size, 120);
@@ -20,11 +20,12 @@ test('catalogue migrations contain 120 unique questions and private answer keys'
   assert.match(sql, /on conflict ?\\(lesson_id\\) do update/i);
 });
 
-test('all six newer topics contain twenty questions', () => {
+test('all six newer topics contain twenty questions after the repair migration', () => {
   for (const topic of ['mobile-flutter', 'mobile-state', 'cloud-deploy', 'cloud-container', 'design-ui', 'design-research']) {
     const count = [...sql.matchAll(new RegExp(`\\\\('${topic}-\\\\d+'`, 'g'))].length;
     assert.equal(count, 20, `${topic} should contain twenty linked questions`);
   }
+  assert.match(sql, /delete from public\\.lessons[\\s\\S]*?repair/i);
 });
 
 test('lesson loading paginates until the final published row instead of stopping at 500', () => {
