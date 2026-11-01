@@ -843,6 +843,25 @@ async function fetchAllUserRows(table, columns, userId, timestampColumn, pageSiz
   return rows;
 }
 
+function completedLessonIds(attempts = [], events = []) {
+  const completed = new Set(
+    (attempts || [])
+      .filter((attempt) => attempt.is_correct)
+      .map((attempt) => attempt.lesson_id)
+      .filter(Boolean)
+  );
+
+  // Completion events are a second durable record written by the completion RPC.
+  // Use them as a recovery source when an attempt row is missing from a read.
+  (events || []).forEach((event) => {
+    if (event.event_type === 'lesson.completed' && event.payload?.lesson_id) {
+      completed.add(event.payload.lesson_id);
+    }
+  });
+
+  return completed;
+}
+
 async function refresh() {
   if (!state.user?.id) throw new Error('You need to sign in again to load your learning data.');
   const userId = state.user.id;
@@ -871,7 +890,7 @@ async function refresh() {
   state.attempts = attempts || [];
   state.events = events || [];
   state.achievements = achievements || [];
-  state.completed = new Set(state.attempts.filter((attempt) => attempt.is_correct).map((attempt) => attempt.lesson_id));
+  state.completed = completedLessonIds(state.attempts, state.events);
 
   // Initialize the profile's timezone from the user's device once; after that, respect the saved setting.
   const deviceZone = localTimeZone();
@@ -909,7 +928,7 @@ async function refreshUserProgress() {
   state.attempts = attempts || [];
   state.events = events || [];
   state.achievements = achievements || [];
-  state.completed = new Set(state.attempts.filter((attempt) => attempt.is_correct).map((attempt) => attempt.lesson_id));
+  state.completed = completedLessonIds(state.attempts, state.events);
 
   renderProfile();
   renderStats();
