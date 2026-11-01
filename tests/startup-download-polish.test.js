@@ -12,7 +12,9 @@ test('startup splash is branded, responsive and has reduced-motion support', () 
   assert.match(html, /ss-boot-logo/);
   assert.match(html, /ss-boot-progress/);
   assert.match(html, /@media\(prefers-reduced-motion:reduce\)/);
-  assert.match(html, /radial-gradient/);
+  assert.match(html, /background:#14234b/);
+  assert.match(html, /ss-boot-spinner/);
+  assert.doesNotMatch(html, /backdrop-filter|radial-gradient|POWERED BY/);
 });
 
 test('account data hydration uses a dedicated loading and recoverable error state', () => {
