@@ -1514,10 +1514,10 @@ function isSixDigitPin(value) {
 }
 
 function normalizePhone(value) {
-  let phone = String(value || '').trim().replace(/[\\s().-]/g, '');
-  if (/^0\\d{9}$/.test(phone)) phone = '+233' + phone.slice(1);
-  else if (/^233\\d{9}$/.test(phone)) phone = '+' + phone;
-  if (!/^\\+[1-9]\\d{7,14}$/.test(phone)) {
+  let phone = String(value || '').trim().replace(/[\s().-]/g, '');
+  if (/^0\d{9}$/.test(phone)) phone = '+233' + phone.slice(1);
+  else if (/^233\d{9}$/.test(phone)) phone = '+' + phone;
+  if (!/^\+[1-9]\d{7,14}$/.test(phone)) {
     throw new Error('Enter a valid telephone number with country code, for example +233241234567.');
   }
   return phone;
@@ -1527,9 +1527,9 @@ function normalizePhone(value) {
 // depend on Supabase Phone Auth, an SMS gateway, or an email inbox. The reserved
 // .invalid domain ensures this generated identifier cannot receive mail.
 function authIdentityForPhone(phone) {
-  const digits = String(phone || '').replace(/\\D/g, '');
+  const digits = String(phone || '').replace(/\D/g, '');
   if (!digits) throw new Error('A valid telephone number is required.');
-  return `phone.${digits}@accounts.skillsprint.invalid`;
+  return \`phone.\${digits}@accounts.skillsprint.invalid\`;
 }
 
 function showPinRecoveryNotice() {
