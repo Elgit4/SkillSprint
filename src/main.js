@@ -219,7 +219,34 @@ async function requestAppInstall() {
     syncInstalledUI();
   }
 }
+function retireOfflineSupport() {
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.getRegistrations()
+      .then((registrations) => Promise.all(registrations.map((registration) => registration.unregister())))
+      .catch((error) => console.warn('Could not retire an older app worker:', error));
+  }
+  if ('caches' in window) {
+    window.caches.keys()
+      .then((keys) => Promise.all(keys.filter((key) => key.startsWith('skillsprint-')).map((key) => window.caches.delete(key))))
+      .catch((error) => console.warn('Could not clear an older app cache:', error));
+  }
+}
+
+function showAppLoading() {
+  const screen = $('#ssBootScreen');
+  if (!screen) return;
+  screen.hidden = false;
+  document.documentElement.classList.add('ss-loading');
+}
+
+function hideAppLoading() {
+  document.documentElement.classList.remove('ss-loading');
+  const screen = $('#ssBootScreen');
+  if (screen) screen.hidden = true;
+}
+
 function setupInstallExperience() {
+  retireOfflineSupport();
   syncInstalledUI();
   installButtons().forEach((button) => button.addEventListener('click', () => { void requestAppInstall(); }));
   window.addEventListener('beforeinstallprompt', (event) => {
@@ -240,20 +267,10 @@ function setupInstallExperience() {
 const bootStartedAt = Date.now();
 function finishInitialBoot() {
   if (!document.documentElement.classList.contains('ss-booting')) return;
-  const minimumDisplay = Math.max(0, 420 - (Date.now() - bootStartedAt));
-  window.setTimeout(async () => {
-    try {
-      if (document.fonts?.ready) await Promise.race([document.fonts.ready, new Promise((resolve) => window.setTimeout(resolve, 900))]);
-    } catch { /* A font service failure must never keep the app behind the loader. */ }
-    requestAnimationFrame(() => requestAnimationFrame(() => {
-      document.documentElement.classList.remove('ss-booting');
-      const screen = $('#ssBootScreen');
-      if (screen) {
-        screen.style.opacity = '0';
-        screen.style.visibility = 'hidden';
-        window.setTimeout(() => screen.remove(), 360);
-      }
-    }));
+  const minimumDisplay = Math.max(0, 140 - (Date.now() - bootStartedAt));
+  window.setTimeout(() => {
+    document.documentElement.classList.remove('ss-booting');
+    hideAppLoading();
   }, minimumDisplay);
 }
 
@@ -1323,9 +1340,6 @@ async function signOut() {
 }
 
 function bindAppUI() {
-  $('#appHydrationRetry')?.addEventListener('click', () => {
-    if (state.user?.id) void hydrate(state.user, { force: true });
-  });
   document.addEventListener('click', (event) => {
     const action = event.target.closest('[data-action]');
     if (action) {
@@ -1411,10 +1425,7 @@ async function hydrate(user, { force = false } = {}) {
   if (!force && state.hydratedUserId === user.id) return;
   hydrationUserId = user.id;
   state.user = user;
-  app?.classList.add('is-hydrating');
-  app?.classList.remove('is-hydration-error');
-  setText('appHydrationTitle', 'Syncing your learning space');
-  setText('appHydrationMessage', 'Getting your lessons, progress and achievements ready.');
+  showAppLoading();
   unlock();
   const work = (async () => {
     try {
@@ -1422,13 +1433,13 @@ async function hydrate(user, { force = false } = {}) {
       state.hydratedUserId = user.id;
       const target = location.hash.replace(/^#\/?/, '').split(/[?&]/)[0];
       nav(knownPages.has(target) ? target : 'home');
-      app?.classList.remove('is-hydrating', 'is-hydration-error');
       if (authMessage) authMessage.textContent = '';
     } catch (error) {
       state.hydratedUserId = null;
-      app?.classList.add('is-hydrating', 'is-hydration-error');
-      setText('appHydrationTitle', 'We could not load your learning space');
-      setText('appHydrationMessage', friendlyError(error));
+      lock();
+      say(friendlyError(error), true);
+    } finally {
+      hideAppLoading();
     }
   })();
   hydrationPromise = work;
@@ -1594,7 +1605,7 @@ async function initializeAuth() {
     const { data, error } = await supabase.auth.getSession();
     if (error) throw error;
     if (data?.session?.user) {
-      void hydrate(data.session.user);
+      await hydrate(data.session.user);
       if (params.get('type') === 'recovery') queueMicrotask(showPasswordReset);
     } else lock();
   } catch (error) {
