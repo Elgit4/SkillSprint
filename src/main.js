@@ -1334,11 +1334,11 @@ function sendPasswordReset(email) {
 function showPasswordReset() {
   if (passwordResetOpen && $('#passwordResetForm')) return;
   passwordResetOpen = true;
-  openModal(`<h2 id="modalTitle">Choose a new password</h2><p class="muted">Use at least 8 characters. A strong, unique password protects your account.</p>
+  openModal(`<h2 id="modalTitle">Choose a new six-digit PIN</h2><p class="muted">Your PIN must contain exactly six numbers. Avoid obvious sequences such as 123456.</p>
     <form id="passwordResetForm" class="settings-form">
-      <label for="newPassword">New password</label><input id="newPassword" type="password" minlength="8" autocomplete="new-password" required>
-      <label for="confirmNewPassword">Confirm new password</label><input id="confirmNewPassword" type="password" minlength="8" autocomplete="new-password" required>
-      <button class="btn btn-primary btn-full" type="submit">Update password</button>
+      <label for="newPassword">New six-digit PIN</label><input id="newPassword" type="password" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" autocomplete="new-password" required>
+      <label for="confirmNewPassword">Confirm new PIN</label><input id="confirmNewPassword" type="password" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" autocomplete="new-password" required>
+      <button class="btn btn-primary btn-full" type="submit">Update PIN</button>
       <p class="lesson-feedback" id="passwordResetFeedback" role="status"></p>
     </form>`, 'Account recovery');
   $('#passwordResetForm').addEventListener('submit', async (event) => {
@@ -1347,19 +1347,19 @@ function showPasswordReset() {
     const confirm = $('#confirmNewPassword').value;
     const feedback = $('#passwordResetFeedback');
     const button = $('button[type="submit"]', event.currentTarget);
-    if (password.length < 8) { feedback.textContent = 'Use at least 8 characters.'; return; }
-    if (password !== confirm) { feedback.textContent = 'The two passwords do not match.'; return; }
+    if (!isSixDigitPin(password)) { feedback.textContent = 'Your PIN must contain exactly six digits.'; return; }
+    if (password !== confirm) { feedback.textContent = 'The two PIN entries do not match.'; return; }
     button.disabled = true; button.textContent = 'Updating…';
     try {
       const { error } = await supabase.auth.updateUser({ password });
       if (error) throw error;
       passwordResetOpen = false;
       closeModal();
-      toast('Password updated successfully.');
+      toast('PIN updated successfully.');
       if (state.user?.id) await hydrate(state.user, { force: true });
     } catch (error) {
       feedback.textContent = friendlyError(error);
-      button.disabled = false; button.textContent = 'Update password';
+      button.disabled = false; button.textContent = 'Update PIN';
     }
   });
 }
