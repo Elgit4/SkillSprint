@@ -700,6 +700,21 @@ async function fetchAllPublishedLessons(pageSize = 500) {
   return rows;
 }
 
+async function cacheCurrentLearningState(userId = state.user?.id) {
+  if (!userId) return;
+  await saveOfflineSnapshot(userId, {
+    profile: state.profile,
+    progress: state.progress,
+    paths: state.paths,
+    lessons: state.lessons,
+    earned: [...state.earned],
+    attempts: state.attempts,
+    events: state.events,
+    achievements: state.achievements,
+    completed: [...state.completed],
+  });
+}
+
 function applyOfflineSnapshot(snapshot) {
   if (!snapshot) return false;
   state.profile = snapshot.profile || null;
@@ -801,7 +816,7 @@ async function refresh() {
   renderProgress();
   updateContinueCards();
   try {
-    await saveOfflineSnapshot(userId, { profile: state.profile, progress: state.progress, paths: state.paths, lessons: state.lessons, earned: [...state.earned], attempts: state.attempts, events: state.events, achievements: state.achievements, completed: [...state.completed] });
+    await cacheCurrentLearningState(userId);
     await syncOfflineQueue(userId);
   } catch (offlineError) {
     console.warn('Could not update SkillSprint offline learning data:', offlineError);
@@ -933,6 +948,7 @@ function openLesson(lessonId, { loop = true } = {}) {
       if (!navigator.onLine) {
         await enqueueOfflineAction(state.user.id, { type: 'answer', lessonId: lesson.id, answer: selectedAnswer, durationSeconds: duration });
         state.attempts.unshift({ lesson_id: lesson.id, is_correct: false, pending: true, attempted_at: new Date().toISOString(), duration_seconds: duration, xp_awarded: 0 });
+        await cacheCurrentLearningState();
         finished = true;
         if (feedback) feedback.textContent = 'Saved on this device. Your answer will be checked when you reconnect.';
         submitButton.hidden = true;
@@ -1040,6 +1056,7 @@ function openLesson(lessonId, { loop = true } = {}) {
       try {
         if (!navigator.onLine) {
           await enqueueOfflineAction(state.user.id, { type: 'skip', lessonId: lesson.id });
+          await cacheCurrentLearningState();
           await setOfflineStatus();
           return;
         }
@@ -1048,7 +1065,7 @@ function openLesson(lessonId, { loop = true } = {}) {
         if (data?.occurred_at) skippedEvent.occurred_at = data.occurred_at;
       } catch (error) {
         if (!navigator.onLine && state.user?.id) {
-          try { await enqueueOfflineAction(state.user.id, { type: 'skip', lessonId: lesson.id }); await setOfflineStatus(); return; }
+          try { await enqueueOfflineAction(state.user.id, { type: 'skip', lessonId: lesson.id }); await cacheCurrentLearningState(); await setOfflineStatus(); return; }
           catch (queueError) { error = queueError; }
         }
         toast(`This question was skipped for the session, but Review Misses could not be synced. ${friendlyError(error)}`);
