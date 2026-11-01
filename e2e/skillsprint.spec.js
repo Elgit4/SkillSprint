@@ -1,11 +1,12 @@
 import { test, expect } from '@playwright/test';
 
-test('SkillSprint loads and exposes email-only authentication', async ({ page }) => {
+test('SkillSprint loads with a spinner-only start screen and email authentication', async ({ page }) => {
   const pageErrors = [];
   page.on('pageerror', (error) => pageErrors.push(error.message));
   await page.goto('/');
   await expect(page).toHaveTitle(/SkillSprint/i);
   await expect(page.locator('#ssBootScreen')).toBeHidden({ timeout: 15000 });
+  await expect(page.locator('#ssBootScreen img')).toHaveCount(0);
   await expect(page.locator('#authEmail')).toBeVisible();
   await expect(page.locator('#authPassword')).toBeVisible();
   await expect(page.locator('#googleSignIn')).toHaveCount(0);
@@ -13,67 +14,40 @@ test('SkillSprint loads and exposes email-only authentication', async ({ page })
   expect(pageErrors).toEqual([]);
 });
 
-test('browser IndexedDB can persist an offline learning queue scoped to a user', async ({ page }) => {
+test('legacy offline workers and SkillSprint caches are retired', async ({ page }) => {
   await page.goto('/');
-  const result = await page.evaluate(async () => {
-    const db = await new Promise((resolve, reject) => {
-      const request = indexedDB.open('skillsprint-e2e-offline', 1);
-      request.onupgradeneeded = () => {
-        const database = request.result;
-        database.createObjectStore('catalogues', { keyPath: 'userId' });
-        const queue = database.createObjectStore('sync_queue', { keyPath: 'id' });
-        queue.createIndex('byUser', 'userId', { unique: false });
-      };
-      request.onsuccess = () => resolve(request.result);
-      request.onerror = () => reject(request.error);
-    });
-    const transaction = db.transaction(['catalogues', 'sync_queue'], 'readwrite');
-    transaction.objectStore('catalogues').put({ userId: 'learner-a', lessons: [{ id: 'lesson-1' }], paths: [{ id: 'web' }] });
-    transaction.objectStore('sync_queue').put({ id: 'queue-1', userId: 'learner-a', type: 'answer', lessonId: 'lesson-1', answer: 'b' });
-    await new Promise((resolve, reject) => {
-      transaction.oncomplete = resolve;
-      transaction.onerror = () => reject(transaction.error);
-    });
-    const read = db.transaction(['catalogues', 'sync_queue'], 'readonly');
-    const snapshot = await new Promise((resolve, reject) => {
-      const request = read.objectStore('catalogues').get('learner-a');
-      request.onsuccess = () => resolve(request.result);
-      request.onerror = () => reject(request.error);
-    });
-    const queued = await new Promise((resolve, reject) => {
-      const request = read.objectStore('sync_queue').index('byUser').getAll('learner-a');
-      request.onsuccess = () => resolve(request.result);
-      request.onerror = () => reject(request.error);
-    });
-    db.close();
-    return { lessonCount: snapshot.lessons.length, pathCount: snapshot.paths.length, queued: queued.length, action: queued[0].type };
-  });
-  expect(result).toEqual({ lessonCount: 1, pathCount: 1, queued: 1, action: 'answer' });
+  await page.waitForFunction(async () => {
+    if (!('caches' in window)) return true;
+    const registrations = navigator.serviceWorker?.getRegistrations
+      ? await navigator.serviceWorker.getRegistrations()
+      : [];
+    const names = await caches.keys();
+    return registrations.length === 0 && !names.some((name) => name.startsWith('skillsprint-'));
+  }, null, { timeout: 15000 });
+  const state = await page.evaluate(async () => ({
+    registrations: navigator.serviceWorker?.getRegistrations ? (await navigator.serviceWorker.getRegistrations()).length : 0,
+    appCaches: 'caches' in window ? (await caches.keys()).filter((name) => name.startsWith('skillsprint-')) : [],
+  }));
+  expect(state).toEqual({ registrations: 0, appCaches: [] });
 });
 
-test('PWA service worker installs and caches the offline learning shell', async ({ page }) => {
+test('PWA manifest retains standard SkillSprint desktop and mobile icons', async ({ page }) => {
   await page.goto('/');
-  await page.evaluate(async () => {
-    if (!('serviceWorker' in navigator)) throw new Error('Service workers are unavailable');
-    await navigator.serviceWorker.ready;
+  const result = await page.evaluate(async () => {
+    const link = document.querySelector('link[rel="manifest"]');
+    const manifestResponse = await fetch(link.href);
+    if (!manifestResponse.ok) throw new Error('PWA manifest could not be loaded');
+    const manifest = await manifestResponse.json();
+    const icons = await Promise.all(manifest.icons.map(async (icon) => {
+      const response = await fetch(new URL(icon.src, location.href));
+      return { sizes: icon.sizes, purpose: icon.purpose || 'any', ok: response.ok };
+    }));
+    const favicon = await fetch('/icons/icon.svg');
+    return { display: manifest.display, icons, faviconOk: favicon.ok };
   });
-  await page.waitForFunction(() => Boolean(navigator.serviceWorker.controller));
-  const cacheState = await page.evaluate(async () => {
-    const names = await caches.keys();
-    const name = names.find((value) => value === 'skillsprint-shell-v5-shell');
-    if (!name) return { names, root: false, offlinePage: false };
-    const cache = await caches.open(name);
-    return {
-      names,
-      root: Boolean(await cache.match(new URL('./', location.href))),
-      offlinePage: Boolean(await cache.match(new URL('./offline.html', location.href))),
-    };
-  });
-  expect(cacheState.names).toContain('skillsprint-shell-v5-shell');
-  expect(cacheState.root).toBeTruthy();
-  expect(cacheState.offlinePage).toBeTruthy();
-  await page.context().setOffline(true);
-  await page.reload();
-  await expect(page).toHaveTitle(/SkillSprint/i);
-  await expect(page.locator('#authGate')).toBeVisible();
+  expect(result.display).toBe('standalone');
+  expect(result.icons.some((icon) => icon.sizes === '192x192' && icon.ok)).toBeTruthy();
+  expect(result.icons.some((icon) => icon.sizes === '512x512' && icon.ok)).toBeTruthy();
+  expect(result.icons.some((icon) => icon.purpose.includes('maskable') && icon.ok)).toBeTruthy();
+  expect(result.faviconOk).toBeTruthy();
 });
