@@ -60,15 +60,9 @@ Lesson answers are submitted to `submit_lesson_attempt`. The client never reads 
 
 ## Curriculum loading and expansion
 
-Published lessons are fetched in stable, ordered pages of 500 rows until the final partial page. The client no longer silently truncates the catalogue at 500 questions. The migration `20261101090000_expand_new_topics_to_20_questions.sql` adds 15 questions to each of the six newer topics, taking each from 5 to 20. It is safe to re-run because lesson IDs and answer-key IDs are upserted. Correct answers remain in `lesson_answer_keys`; the browser only receives question content and options.
-
-Apply the new migration to the connected Supabase project before expecting the expanded counts in the app. Existing learner progress and prior lesson IDs are retained.
-
-## Curriculum loading and expansion
-
 Published lessons are fetched in stable, ordered pages of 500 rows until the final partial page. The client no longer silently truncates the catalogue at 500 questions. The migration `20261101090000_expand_new_topics_to_20_questions.sql` adds 15 questions to each of the six newer topics, taking each from 5 to 20. A follow-up repair migration corrects topic-scoped IDs and removes only the malformed IDs introduced by the first expansion run. Both migrations are idempotent. Correct answers remain in `lesson_answer_keys`; the browser only receives question content and options.
 
-The expansion has been applied to the connected Supabase project. Existing learner progress and the original lesson IDs are retained.
+The expansion has been applied to the connected Supabase project. Existing learner progress and original lesson IDs are retained.
 
 ## Checks performed for this package
 
