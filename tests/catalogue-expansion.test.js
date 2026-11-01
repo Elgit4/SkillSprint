@@ -12,7 +12,7 @@ test('catalogue migration adds three published technical learning paths', () => 
 });
 
 test('catalogue migrations contain 120 unique topic-scoped questions and private answer keys', () => {
-  const ids = [...sql.matchAll(/((?:mobile|cloud|design)-(?:[a-z]+-)?\d+)/g)].map((match) => match[1]);
+  const ids = [...sql.matchAll(/'((?:mobile|cloud|design)-(?:[a-z]+-)?\d+)'/g)].map((match) => match[1]);
   assert.equal(ids.length, 120);
   assert.equal(new Set(ids).size, 120);
   assert.match(sql, /insert into public\.lesson_answer_keys\(lesson_id,correct_answer\)/i);
@@ -25,7 +25,7 @@ test('all six newer topics contain twenty questions after the repair migration',
     const count = [...sql.matchAll(new RegExp(topic + '-\\d+', 'g'))].length;
     assert.equal(count, 20, topic + ' should contain twenty linked questions');
   }
-  assert.match(sql, /delete from public\.lessons[\s\S]*?repair/i);
+  assert.match(sql, /delete from public\.lessons[\s\S]*?path_id in \('mobile','cloud','design'\)/i);
 });
 
 test('lesson loading paginates until the final published row instead of stopping at 500', () => {
