@@ -106,3 +106,16 @@ The Supabase Auth advisor currently reports **leaked-password protection disable
 - The service worker caches the application shell and static assets, not the live Supabase learning catalogue or account data. Full offline lessons are not currently promised.
 - No automated real-browser end-to-end suite is configured yet. CI validates syntax, unit/contract tests, dependency audit and production compilation, but device-level install/download and auth journeys still require browser testing.
 - Privacy/terms pages and production email/OAuth provider configuration were not found in the repository and must be completed before public release.
+
+
+## Email-only sign-in
+
+The SkillSprint interface supports email and password only. Google sign-in has been removed from the application. Disable the Google provider in Supabase Authentication → Sign In / Providers as a separate dashboard configuration; the connected project tools do not expose that provider setting.
+
+## Offline learning
+
+After a learner signs in and opens SkillSprint while connected, the app stores the published paths, full lesson catalogue and that learner's progress in a user-scoped IndexedDB database. The service worker caches the application shell and static resources. When offline, the learner can reopen cached lessons and practise. Answers and skips are queued on that device and submitted to the existing authenticated Supabase RPCs after connectivity returns. Offline answers remain pending until the server validates them; correctness and XP are never guessed locally. The app requests persistent browser storage where supported. Offline data is specific to the same signed-in account and browser/device. First-time use still requires an internet connection, and browser storage eviction can remove local copies.
+
+## Browser and device coverage
+
+CI runs automated smoke tests on Chromium, Firefox and WebKit (Safari's browser engine). This checks application startup, sign-in UI, manifest and service-worker behavior. Real iOS Safari and Android Chrome installation, push-free offline operation and file saving must also be tested on physical devices before public launch.
