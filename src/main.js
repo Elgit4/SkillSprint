@@ -153,10 +153,8 @@ function closeModal() {
 function friendlyError(error) {
   const raw = error?.message || String(error || 'Something went wrong.');
   if (/invalid login credentials/i.test(raw)) return 'The telephone number or PIN is incorrect. Check both and try again.';
-  if (/phone.*disabled|phone provider.*disabled/i.test(raw)) return 'Telephone sign-in is not enabled in Supabase yet. Enable the Phone provider and turn off phone confirmations to use PIN-only registration.';
-  if (/phone.*already.*registered|user already registered/i.test(raw)) return 'That telephone number is already linked to an account. Sign in or use the existing-account migration option.';
-  if (/email not confirmed/i.test(raw)) return 'This existing account needs its email confirmed before it can be migrated. Contact SkillSprint support for help.';
-  if (/already registered|user already exists/i.test(raw)) return 'An account with this email already exists. Switch to Sign in.';
+  if (/email not confirmed/i.test(raw)) return 'Email confirmation is still enabled in Supabase. Turn off Confirm email to allow PIN-only registration.';
+  if (/already registered|user already exists/i.test(raw)) return 'An account already exists for this telephone number. Switch to Sign in.';
   if (/duplicate key|profiles_username_lower_uidx|profiles_username_format_check/i.test(raw)) return 'That username is already taken or is not in the required format. Choose another username.';
   if (/permission denied|row-level security/i.test(raw)) return 'Your account is signed in, but the database did not allow this action. Check the Supabase policies and grants.';
   if (/Failed to fetch|NetworkError|fetch failed/i.test(raw)) return 'Could not reach SkillSprint. Check your internet connection and try again.';
@@ -1109,7 +1107,7 @@ function openSettings(kind) {
         <button class="settings-choice" type="button" data-setting="goal"><span>${iconSvg('clock')}</span><div><strong>Daily learning goal</strong><small>${Number(state.profile?.daily_goal_minutes || 10)} minutes a day</small></div></button>
         <button class="settings-choice" type="button" data-setting="interests"><span>${iconSvg('code')}</span><div><strong>Technical interests</strong><small>${esc((state.profile?.technical_interests || []).join(', ') || 'Not set')}</small></div></button>
         <button class="settings-choice" type="button" data-setting="notifications"><span>${iconSvg('bell')}</span><div><strong>Reminder preference</strong><small>${state.profile?.reminders_enabled ? 'On' : 'Off'} · in-app preference</small></div></button>
-        <button class="settings-choice" type="button" data-setting="password"><span>${iconSvg('lock')}</span><div><strong>Reset password</strong><small>Send a password recovery email to your account</small></div></button>
+        <button class="settings-choice" type="button" data-setting="password"><span>${iconSvg('lock')}</span><div><strong>Change PIN</strong><small>Update your six-digit PIN while signed in</small></div></button>
         <button class="settings-choice" type="button" data-setting="activity"><span>${iconSvg('activity')}</span><div><strong>Learning activity</strong><small>Review your latest attempts and completions</small></div></button>
         <button class="settings-choice" type="button" data-setting="install-app" id="installAppSettingsBtn"><span>${iconSvg('sparkle')}</span><div><strong>Install SkillSprint</strong><small>Add the app to this device</small></div></button>
         <button class="settings-choice" type="button" data-setting="signout"><span>${iconSvg('logout')}</span><div><strong>Sign out</strong><small>End this session on this device</small></div></button>
@@ -1317,21 +1315,6 @@ function openPlayground() {
   setTab('html');run();
 }
 
-function sendPasswordReset(email) {
-  const cleanEmail = String(email || '').trim().toLowerCase();
-  if (!cleanEmail) {
-    say('Enter the email address for your account first.', true);
-    authEmail?.focus();
-    return;
-  }
-  supabase.auth.resetPasswordForEmail(cleanEmail, {
-    redirectTo: `${location.origin}${location.pathname}#reset-password`,
-  }).then(({ error }) => {
-    if (error) throw error;
-    say('Password recovery email requested. Check your inbox and follow the secure link to choose a new password.');
-  }).catch((error) => say(friendlyError(error), true));
-}
-
 function showPasswordReset() {
   if (passwordResetOpen && $('#passwordResetForm')) return;
   passwordResetOpen = true;
@@ -1422,7 +1405,7 @@ function bindAppUI() {
     if (setting) {
       const target = setting.dataset.setting;
       closeModal();
-      if (target === 'password') sendPasswordReset(state.user?.email || '');
+      if (target === 'password') showPasswordReset();
       else if (target === 'activity') showActivity();
       else if (target === 'signout') void signOut();
       else if (target === 'install-app') void requestAppInstall();
@@ -1531,13 +1514,22 @@ function isSixDigitPin(value) {
 }
 
 function normalizePhone(value) {
-  let phone = String(value || '').trim().replace(/[\s().-]/g, '');
-  if (/^0\d{9}$/.test(phone)) phone = '+233' + phone.slice(1);
-  else if (/^233\d{9}$/.test(phone)) phone = '+' + phone;
-  if (!/^\+[1-9]\d{7,14}$/.test(phone)) {
+  let phone = String(value || '').trim().replace(/[\\s().-]/g, '');
+  if (/^0\\d{9}$/.test(phone)) phone = '+233' + phone.slice(1);
+  else if (/^233\\d{9}$/.test(phone)) phone = '+' + phone;
+  if (!/^\\+[1-9]\\d{7,14}$/.test(phone)) {
     throw new Error('Enter a valid telephone number with country code, for example +233241234567.');
   }
   return phone;
+}
+
+// Supabase email/password auth is used as the transport so this app does not
+// depend on Supabase Phone Auth, an SMS gateway, or an email inbox. The reserved
+// .invalid domain ensures this generated identifier cannot receive mail.
+function authIdentityForPhone(phone) {
+  const digits = String(phone || '').replace(/\\D/g, '');
+  if (!digits) throw new Error('A valid telephone number is required.');
+  return `phone.${digits}@accounts.skillsprint.invalid`;
 }
 
 function showPinRecoveryNotice() {
@@ -1596,20 +1588,21 @@ function bindAuthUI() {
     authSubmit.disabled = true;
     authSubmit.querySelector('span').textContent = isSignup ? 'Creating account…' : 'Signing in…';
     try {
+      const authEmail = authIdentityForPhone(phone);
       if (isSignup) {
         const { data, error } = await supabase.auth.signUp({
-          phone,
+          email: authEmail,
           password: pin,
           options: { data: { username, display_name: displayName } },
         });
         if (error) throw error;
         if (!data?.user || !data?.session) {
-          throw new Error('Supabase did not create a signed-in session. Phone sign-up must be enabled and phone confirmations disabled for this PIN-only setup.');
+          throw new Error('Supabase did not create a signed-in session. Make sure the Email provider is enabled and Confirm email is turned off.');
         }
         await hydrate(data.user, { force: true });
         toast('Your new SkillSprint account is ready.');
       } else {
-        const { data, error } = await supabase.auth.signInWithPassword({ phone, password: pin });
+        const { data, error } = await supabase.auth.signInWithPassword({ email: authEmail, password: pin });
         if (error) throw error;
         if (!data?.session || !data?.user) throw new Error('Sign-in did not return a session. Please try again.');
         await hydrate(data.user, { force: true });
