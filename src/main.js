@@ -53,6 +53,7 @@ const gate = $('#authGate');
 const app = $('.app');
 const authForm = $('#authForm');
 const authEmail = $('#authEmail');
+const authPhone = $('#authPhone');
 const authUsername = $('#authUsername');
 const authDisplayName = $('#authDisplayName');
 const authPassword = $('#authPassword');
@@ -152,9 +153,10 @@ function closeModal() {
 
 function friendlyError(error) {
   const raw = error?.message || String(error || 'Something went wrong.');
-  if (/invalid login credentials/i.test(raw)) return 'Email or PIN is incorrect. Check your details, or use Forgot PIN? to verify your email and set a new PIN.';
-  if (/email not confirmed/i.test(raw)) return 'This account still needs email confirmation. Check your inbox or review your Supabase email-confirmation settings.';
-  if (/over_email_send_rate_limit|email rate limit exceeded/i.test(raw)) return 'Supabase has temporarily limited email delivery. Wait before requesting another email, or configure a verified SMTP sender.';
+  if (/invalid login credentials/i.test(raw)) return 'The telephone number or PIN is incorrect. Check both and try again.';
+  if (/phone.*disabled|phone provider.*disabled/i.test(raw)) return 'Telephone sign-in is not enabled in Supabase yet. Enable the Phone provider and turn off phone confirmations to use PIN-only registration.';
+  if (/phone.*already.*registered|user already registered/i.test(raw)) return 'That telephone number is already linked to an account. Sign in or use the existing-account migration option.';
+  if (/email not confirmed/i.test(raw)) return 'This existing account needs its email confirmed before it can be migrated. Contact SkillSprint support for help.';
   if (/already registered|user already exists/i.test(raw)) return 'An account with this email already exists. Switch to Sign in.';
   if (/duplicate key|profiles_username_lower_uidx|profiles_username_format_check/i.test(raw)) return 'That username is already taken or is not in the required format. Choose another username.';
   if (/permission denied|row-level security/i.test(raw)) return 'Your account is signed in, but the database did not allow this action. Check the Supabase policies and grants.';
@@ -1484,12 +1486,23 @@ async function hydrate(user, { force = false } = {}) {
 
 function syncAuthMode() {
   const isSignup = authMode === 'signup';
+  const isMigration = authMode === 'migrate';
+  const isSignin = authMode === 'signin';
   $('#authUsernameGroup').hidden = !isSignup;
   $('#authDisplayNameGroup').hidden = !isSignup;
   $('#authConfirmGroup').hidden = !isSignup;
+  $('#authPhoneGroup').hidden = false;
+  $('#authEmailGroup').hidden = !isMigration;
   authUsername.required = isSignup;
   authDisplayName.required = isSignup;
   authConfirmPassword.required = isSignup;
+  authPhone.required = true;
+  authEmail.required = isMigration;
+  authPhone.autocomplete = 'tel';
+  authPhone.inputMode = 'tel';
+  authPhone.placeholder = '024 123 4567';
+  authEmail.autocomplete = 'email';
+  authEmail.placeholder = 'The email used on your old account';
   authPassword.autocomplete = isSignup ? 'new-password' : 'current-password';
   authPassword.placeholder = isSignup ? 'Create a 6-digit PIN' : 'Enter your 6-digit PIN';
   authPassword.inputMode = 'numeric';
@@ -1504,20 +1517,23 @@ function syncAuthMode() {
   authConfirmPassword.pattern = '[0-9]{6}';
   authUsername.value = '';
   authDisplayName.value = '';
-  $('#authEmailLabel').textContent = 'Email address';
-  authEmail.placeholder = 'you@example.com';
-  $('#authTitle').textContent = isSignup ? 'Create your account' : 'Sign in to SkillSprint';
-  $('#authFormEyebrow').textContent = isSignup ? 'GET STARTED' : 'WELCOME BACK';
+  $('#authPhoneLabel').textContent = isMigration ? 'Telephone number to link' : 'Telephone number';
+  $('#authTitle').textContent = isSignup ? 'Create your account' : isMigration ? 'Move your existing account' : 'Sign in to SkillSprint';
+  $('#authFormEyebrow').textContent = isSignup ? 'GET STARTED' : isMigration ? 'ONE-TIME ACCOUNT MOVE' : 'WELCOME BACK';
   $('#authIntro').textContent = isSignup
-    ? 'Choose your username and a reusable 6-digit PIN. We will verify your email before creating your account.'
-    : 'Sign in with your email address and your reusable 6-digit PIN.';
-  $('#authSwitchText').textContent = isSignup ? 'Already have an account?' : 'New to SkillSprint?';
+    ? 'Create your account with a telephone number and reusable six-digit PIN. No email or SMS code is used.'
+    : isMigration
+      ? 'Sign in with the email and PIN you already use, then attach your telephone number. Your existing progress stays with this account.'
+      : 'Sign in using your telephone number and reusable six-digit PIN.';
+  $('#authSwitchText').textContent = isSignup ? 'Already have an account?' : isMigration ? 'Back to phone sign in?' : 'New to SkillSprint?';
   $('#authModeToggle').innerHTML = isSignup ? 'Sign in instead <span aria-hidden="true">→</span>' : 'Create an account <span aria-hidden="true">→</span>';
+  $('#authMigrationToggle').hidden = !isSignin;
+  $('#authMigrationToggle').textContent = 'Move an existing email account';
   $('#authPasswordRule').textContent = '6 digits · numbers only';
-  $('#forgotPassword').hidden = isSignup;
+  $('#forgotPassword').hidden = !isSignin;
   $('#forgotPassword').textContent = 'Forgot PIN?';
-  $('#authFormMetaLabel').textContent = 'Your PIN is securely protected';
-  $('#authSubmit').querySelector('span').textContent = isSignup ? 'Verify email & create account' : 'Sign in';
+  $('#authFormMetaLabel').textContent = 'Your PIN is protected by Supabase Auth';
+  $('#authSubmit').querySelector('span').textContent = isSignup ? 'Create account' : isMigration ? 'Sign in & link number' : 'Sign in';
   if (authMessage) { authMessage.textContent = ''; authMessage.dataset.error = 'false'; }
 }
 
@@ -1525,56 +1541,99 @@ function isSixDigitPin(value) {
   return /^[0-9]{6}$/.test(String(value || ''));
 }
 
-async function startPinRecovery(email) {
-  const cleanEmail = String(email || '').trim().toLowerCase();
-  if (!cleanEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(cleanEmail)) {
-    say('Enter the email address linked to your account first.', true);
-    authEmail?.focus();
-    return;
+function normalizePhone(value) {
+  let phone = String(value || '').trim().replace(/[\s().-]/g, '');
+  if (/^0\d{9}$/.test(phone)) phone = '+233' + phone.slice(1);
+  else if (/^233\d{9}$/.test(phone)) phone = '+' + phone;
+  if (!/^\+[1-9]\d{7,14}$/.test(phone)) {
+    throw new Error('Enter a valid telephone number with country code, for example +233241234567.');
   }
-  const { error } = await supabase.auth.signInWithOtp({
-    email: cleanEmail,
-    options: { shouldCreateUser: false },
-  });
-  if (error) throw error;
-  showPinOtpModal(cleanEmail, null, 'recovery');
-  say('A verification code has been sent. Check your email.');
+  return phone;
 }
 
-function showPinOtpModal(email, pendingPin, purpose) {
-  const isRecovery = purpose === 'recovery';
-  openModal(`<h2 id="modalTitle">${isRecovery ? 'Verify and reset your PIN' : 'Verify your email'}</h2>
-    <p class="muted">Enter the six-digit verification code sent to <strong>${esc(email)}</strong>.</p>
-    ${isRecovery ? `<label for="recoveryPin">New six-digit PIN</label><input id="recoveryPin" class="settings-input" type="password" inputmode="numeric" autocomplete="new-password" maxlength="6" pattern="[0-9]{6}" required>
-      <label for="recoveryPinConfirm">Confirm new PIN</label><input id="recoveryPinConfirm" class="settings-input" type="password" inputmode="numeric" autocomplete="new-password" maxlength="6" pattern="[0-9]{6}" required>` : ''}
-    <form id="pinOtpForm" class="settings-form">
-      <label for="pinEmailOtp">Email verification code</label>
-      <input id="pinEmailOtp" type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="6" pattern="[0-9]{6}" placeholder="000000" required>
-      <button class="btn btn-primary btn-full" type="submit">${isRecovery ? 'Verify & update PIN' : 'Verify email & finish signup'}</button>
-      <p class="lesson-feedback" id="pinOtpFeedback" role="status"></p>
-    </form>`, 'Account verification');
-  $('#pinOtpForm').addEventListener('submit', async (event) => {
+function showPinRecoveryNotice() {
+  openModal(`<h2 id="modalTitle">Recover your PIN</h2>
+    <p class="muted">Email and SMS verification are not configured for this PIN-only account system. To protect your learning account, PIN resets must be handled by SkillSprint support after your identity is checked.</p>
+    <p class="muted small">Do not share your current PIN with anyone. Your learning progress remains saved in your account.</p>
+    <button class="btn btn-primary btn-full" id="closePinRecovery" type="button">Close</button>`, 'Account help');
+  $('#closePinRecovery')?.addEventListener('click', closeModal);
+}
+
+function bindAuthUI() {
+  $('#authModeToggle')?.addEventListener('click', () => {
+    authMode = authMode === 'signup' ? 'signin' : 'signup';
+    syncAuthMode();
+  });
+  $('#authMigrationToggle')?.addEventListener('click', () => {
+    authMode = 'migrate';
+    syncAuthMode();
+    authEmail.focus();
+  });
+  $('#authPasswordToggle')?.addEventListener('click', () => {
+    const showing = authPassword.type === 'text';
+    authPassword.type = showing ? 'password' : 'text';
+    $('#authPasswordToggle').setAttribute('aria-pressed', String(!showing));
+    $('#authPasswordToggle').setAttribute('aria-label', showing ? 'Show PIN' : 'Hide PIN');
+  });
+  $('#forgotPassword')?.addEventListener('click', showPinRecoveryNotice);
+  authForm?.addEventListener('submit', async (event) => {
     event.preventDefault();
-    const feedback = $('#pinOtpFeedback');
-    const button = $('button[type="submit"]', event.currentTarget);
-    const token = $('#pinEmailOtp').value.trim();
-    const newPin = isRecovery ? $('#recoveryPin').value : pendingPin;
-    if (!isSixDigitPin(token)) { feedback.textContent = 'Enter the six-digit code from your email.'; return; }
-    if (!isSixDigitPin(newPin)) { feedback.textContent = 'Your PIN must contain exactly six digits.'; return; }
-    if (isRecovery && newPin !== $('#recoveryPinConfirm').value) { feedback.textContent = 'The PIN entries do not match.'; return; }
-    button.disabled = true; button.textContent = 'Verifying…';
+    if (authSubmit.disabled) return;
+    const isSignup = authMode === 'signup';
+    const isMigration = authMode === 'migrate';
+    const phone = (() => { try { return normalizePhone(authPhone.value); } catch (error) { say(error.message, true); authPhone.focus(); return null; } })();
+    const email = authEmail.value.trim().toLowerCase();
+    const username = normalizeUsername(authUsername.value);
+    const displayName = authDisplayName.value.trim();
+    const pin = authPassword.value;
+    if (!phone) return;
+    if (isMigration && (!email || !authEmail.checkValidity())) { say('Enter the email address linked to your existing account.', true); authEmail.focus(); return; }
+    if (!isSixDigitPin(pin)) { say('Your PIN must contain exactly six digits.', true); authPassword.focus(); return; }
+    if (isSignup && !isValidUsername(username)) {
+      say('Username must be 3–20 characters using letters, numbers or underscores.', true); authUsername.focus(); return;
+    }
+    if (isSignup && displayName.length < 2) {
+      say('Enter a display name with at least 2 characters.', true); authDisplayName.focus(); return;
+    }
+    if (isSignup && pin !== authConfirmPassword.value) {
+      say('The PINs do not match. Check both fields and try again.', true); authConfirmPassword.focus(); return;
+    }
+
+    authSubmit.disabled = true;
+    authSubmit.querySelector('span').textContent = isSignup ? 'Creating account…' : isMigration ? 'Linking number…' : 'Signing in…';
     try {
-      const { data, error } = await supabase.auth.verifyOtp({ email, token, type: 'email' });
-      if (error) throw error;
-      if (!data?.user || !data?.session) throw new Error('Email verification did not create a session. Request a new code and try again.');
-      const { error: pinError } = await supabase.auth.updateUser({ password: newPin });
-      if (pinError) throw pinError;
-      closeModal();
-      await hydrate(data.user, { force: true });
-      toast(isRecovery ? 'Your PIN has been reset.' : 'Your email is verified. Welcome to SkillSprint.');
+      if (isSignup) {
+        const { data, error } = await supabase.auth.signUp({
+          phone,
+          password: pin,
+          options: { data: { username, display_name: displayName } },
+        });
+        if (error) throw error;
+        if (!data?.user || !data?.session) {
+          throw new Error('Supabase did not create a signed-in session. In Supabase Authentication settings, enable Phone and disable phone confirmations; no SMS provider is used in this setup.');
+        }
+        await hydrate(data.user, { force: true });
+        toast('Your SkillSprint account is ready.');
+      } else if (isMigration) {
+        const { data, error } = await supabase.auth.signInWithPassword({ email, password: pin });
+        if (error) throw error;
+        if (!data?.session || !data?.user) throw new Error('Existing-account sign-in did not return a session.');
+        const { error: linkError } = await supabase.functions.invoke('link-phone', { body: { phone } });
+        if (linkError) throw linkError;
+        await hydrate(data.user, { force: true });
+        toast('Your telephone number is linked. Use it for sign-in from now on.');
+      } else {
+        const { data, error } = await supabase.auth.signInWithPassword({ phone, password: pin });
+        if (error) throw error;
+        if (!data?.session || !data?.user) throw new Error('Sign-in did not return a session. Please try again.');
+        await hydrate(data.user, { force: true });
+        toast('You are signed in.');
+      }
     } catch (error) {
-      feedback.textContent = friendlyError(error);
-      button.disabled = false; button.textContent = isRecovery ? 'Verify & update PIN' : 'Verify email & finish signup';
+      say(friendlyError(error), true);
+    } finally {
+      authSubmit.disabled = false;
+      authSubmit.querySelector('span').textContent = isSignup ? 'Create account' : isMigration ? 'Sign in & link number' : 'Sign in';
     }
   });
 }
