@@ -1020,6 +1020,7 @@ function openLesson(lessonId, { loop = true } = {}) {
           const duration = Math.min(7200, Math.max(0, Math.floor((Date.now() - startedAt) / 1000)));
           await enqueueOfflineAction(state.user.id, { type: 'answer', lessonId: lesson.id, answer: selectedAnswer, durationSeconds: duration });
           state.attempts.unshift({ lesson_id: lesson.id, is_correct: false, pending: true, attempted_at: new Date().toISOString(), duration_seconds: duration, xp_awarded: 0 });
+          await cacheCurrentLearningState();
           finished = true;
           if (feedback) feedback.textContent = 'Saved on this device. Your answer will be checked after you reconnect.';
           submitButton.hidden = true;
