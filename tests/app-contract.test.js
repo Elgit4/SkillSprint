@@ -15,12 +15,17 @@ test('the original first-visit welcome splash remains intact', () => {
 });
 
 test('authentication controls required by the app are present and wired', () => {
-  for (const id of ['authForm', 'authEmail', 'authUsername', 'authDisplayName', 'authPassword', 'authConfirmPassword', 'authModeToggle', 'authPasswordToggle', 'forgotPassword', 'googleSignIn', 'authMessage']) {
+  for (const id of ['authForm', 'authEmail', 'authUsername', 'authDisplayName', 'authPassword', 'authConfirmPassword', 'authModeToggle', 'authPasswordToggle', 'forgotPassword', 'authMessage']) {
     assert.match(html, new RegExp(`id="${id}"`), `Missing auth control: ${id}`);
   }
-  for (const api of ['signUp', 'signInWithPassword', 'resetPasswordForEmail', 'updateUser', 'signInWithOAuth']) {
+  for (const api of ['signUp', 'signInWithPassword', 'resetPasswordForEmail', 'updateUser']) {
     assert.ok(main.includes(`.${api}(`), `Missing auth operation: ${api}`);
   }
+});
+
+test('email-only authentication is enforced in the app UI and client', () => {
+  assert.doesNotMatch(html, /googleSignIn|Continue with Google/i);
+  assert.doesNotMatch(main, /signInWithOAuth|provider:\\s*['\"]google['\"]/i);
 });
 
 test('all five application sections and important interactive tools exist', () => {
