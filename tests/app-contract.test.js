@@ -56,7 +56,9 @@ test('Supabase browser client uses publishable/anon key names only', () => {
   assert.match(supabase, /VITE_SUPABASE_PUBLISHABLE_KEY/);
   assert.match(supabase, /VITE_SUPABASE_ANON_KEY/);
   assert.doesNotMatch(supabase, /service_role|secret_key/i);
-  assert.match(supabase, /persistSession:\s*false/);
+  assert.match(supabase, /persistSession:\s*true/);
+  assert.match(supabase, /autoRefreshToken:\s*true/);
+  assert.match(supabase, /detectSessionInUrl:\s*true/);
 });
 
 
