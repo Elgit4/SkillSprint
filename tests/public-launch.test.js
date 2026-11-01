@@ -21,7 +21,7 @@ test('Vercel configuration applies baseline browser security headers', () => {
 test('privacy and terms are clearly marked as drafts with unfilled operator details', () => {
   assert.match(privacy, /DRAFT — NOT READY TO PUBLISH/);
   assert.match(privacy, /\[LEGAL NAME/);
-  assert.match(privacy, /\[MONITORED PRIVACY EMAIL\]/);
+  assert.match(privacy, /\[INSERT MONITORED PRIVACY EMAIL\]/);
   assert.match(terms, /DRAFT — NOT READY TO PUBLISH/);
   assert.match(terms, /\[LEGAL NAME/);
   assert.match(terms, /\[MONITORED SUPPORT EMAIL\]/);
