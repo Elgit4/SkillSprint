@@ -807,8 +807,7 @@ body{background:#f6f4ef}
           </div>
           <div class="auth-form-meta" id="authFormMeta"><span id="authFormMetaLabel">Secure account access</span><button class="auth-forgot" id="forgotPassword" type="button">Forgot password?</button></div>
           <button class="auth-submit" type="submit" id="authSubmit"><span>Sign in</span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14m-6-6 6 6-6 6"></path></svg></button>
-          <button class="auth-google" id="googleSignIn" type="button"><span class="google-mark" aria-hidden="true">G</span> Continue with Google</button>
-          <p class="auth-message" id="authMessage" role="status" aria-live="polite"></p>
+                    <p class="auth-message" id="authMessage" role="status" aria-live="polite"></p>
         </form>
 
         <div class="auth-switch"><span id="authSwitchText">New to SkillSprint?</span><button type="button" id="authModeToggle">Create an account <span aria-hidden="true">→</span></button></div>
@@ -830,6 +829,7 @@ body{background:#f6f4ef}
 <a class="skip" href="#main">Skip to content</a>
 <noscript><p style="padding:24px;text-align:center">SkillSprint needs JavaScript to run missions.</p></noscript>
 <div class="app">
+<div class="offline-status" id="offlineStatus" role="status" aria-live="polite" hidden></div>
 <div class="app-hydration-screen" id="appHydrationScreen" role="status" aria-live="polite">
   <div class="app-hydration-card">
     <span class="app-hydration-mark" aria-hidden="true"><span></span></span>
