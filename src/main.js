@@ -220,8 +220,9 @@ async function requestAppInstall() {
   }
 }
 function retireOfflineSupport() {
-  if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.getRegistrations()
+  const workerContainer = navigator.serviceWorker;
+  if (workerContainer?.getRegistrations) {
+    workerContainer.getRegistrations()
       .then((registrations) => Promise.all(registrations.map((registration) => registration.unregister())))
       .catch((error) => console.warn('Could not retire an older app worker:', error));
   }
