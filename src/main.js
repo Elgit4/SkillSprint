@@ -1491,8 +1491,17 @@ function syncAuthMode() {
   authDisplayName.required = isSignup;
   authConfirmPassword.required = isSignup;
   authPassword.autocomplete = isSignup ? 'new-password' : 'current-password';
-  authPassword.placeholder = isSignup ? 'Create a password' : 'Enter your password';
+  authPassword.placeholder = isSignup ? 'Create a 6-digit PIN' : 'Enter your 6-digit PIN';
+  authPassword.inputMode = 'numeric';
+  authPassword.maxLength = 6;
+  authPassword.minLength = 6;
+  authPassword.pattern = '[0-9]{6}';
   authConfirmPassword.value = '';
+  authConfirmPassword.placeholder = 'Enter the PIN again';
+  authConfirmPassword.inputMode = 'numeric';
+  authConfirmPassword.maxLength = 6;
+  authConfirmPassword.minLength = 6;
+  authConfirmPassword.pattern = '[0-9]{6}';
   authUsername.value = '';
   authDisplayName.value = '';
   $('#authEmailLabel').textContent = 'Email address';
@@ -1500,15 +1509,74 @@ function syncAuthMode() {
   $('#authTitle').textContent = isSignup ? 'Create your account' : 'Sign in to SkillSprint';
   $('#authFormEyebrow').textContent = isSignup ? 'GET STARTED' : 'WELCOME BACK';
   $('#authIntro').textContent = isSignup
-    ? 'Choose your public username. Your email stays private for sign-in and account recovery.'
-    : 'Sign in with your email and password. Your username is how other learners see you.';
+    ? 'Choose your username and a reusable 6-digit PIN. We will verify your email before creating your account.'
+    : 'Sign in with your email address and your reusable 6-digit PIN.';
   $('#authSwitchText').textContent = isSignup ? 'Already have an account?' : 'New to SkillSprint?';
   $('#authModeToggle').innerHTML = isSignup ? 'Sign in instead <span aria-hidden="true">→</span>' : 'Create an account <span aria-hidden="true">→</span>';
-  $('#authPasswordRule').textContent = isSignup ? 'Use 8 or more characters' : '8 characters minimum';
+  $('#authPasswordRule').textContent = '6 digits · numbers only';
   $('#forgotPassword').hidden = isSignup;
-  $('#authFormMetaLabel').textContent = isSignup ? 'Your password protects your account' : 'Secure account access';
-  $('#authSubmit').querySelector('span').textContent = isSignup ? 'Create account' : 'Sign in';
+  $('#forgotPassword').textContent = 'Forgot PIN?';
+  $('#authFormMetaLabel').textContent = 'Your PIN is securely protected';
+  $('#authSubmit').querySelector('span').textContent = isSignup ? 'Verify email & create account' : 'Sign in';
   if (authMessage) { authMessage.textContent = ''; authMessage.dataset.error = 'false'; }
+}
+
+function isSixDigitPin(value) {
+  return /^[0-9]{6}$/.test(String(value || ''));
+}
+
+async function startPinRecovery(email) {
+  const cleanEmail = String(email || '').trim().toLowerCase();
+  if (!cleanEmail || !/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(cleanEmail)) {
+    say('Enter the email address linked to your account first.', true);
+    authEmail?.focus();
+    return;
+  }
+  const { error } = await supabase.auth.signInWithOtp({
+    email: cleanEmail,
+    options: { shouldCreateUser: false },
+  });
+  if (error) throw error;
+  showPinOtpModal(cleanEmail, null, 'recovery');
+  say('A verification code has been sent. Check your email.');
+}
+
+function showPinOtpModal(email, pendingPin, purpose) {
+  const isRecovery = purpose === 'recovery';
+  openModal(`<h2 id="modalTitle">${isRecovery ? 'Verify and reset your PIN' : 'Verify your email'}</h2>
+    <p class="muted">Enter the six-digit verification code sent to <strong>${esc(email)}</strong>.</p>
+    ${isRecovery ? `<label for="recoveryPin">New six-digit PIN</label><input id="recoveryPin" class="settings-input" type="password" inputmode="numeric" autocomplete="new-password" maxlength="6" pattern="[0-9]{6}" required>
+      <label for="recoveryPinConfirm">Confirm new PIN</label><input id="recoveryPinConfirm" class="settings-input" type="password" inputmode="numeric" autocomplete="new-password" maxlength="6" pattern="[0-9]{6}" required>` : ''}
+    <form id="pinOtpForm" class="settings-form">
+      <label for="pinEmailOtp">Email verification code</label>
+      <input id="pinEmailOtp" type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="6" pattern="[0-9]{6}" placeholder="000000" required>
+      <button class="btn btn-primary btn-full" type="submit">${isRecovery ? 'Verify & update PIN' : 'Verify email & finish signup'}</button>
+      <p class="lesson-feedback" id="pinOtpFeedback" role="status"></p>
+    </form>`, 'Account verification');
+  $('#pinOtpForm').addEventListener('submit', async (event) => {
+    event.preventDefault();
+    const feedback = $('#pinOtpFeedback');
+    const button = $('button[type="submit"]', event.currentTarget);
+    const token = $('#pinEmailOtp').value.trim();
+    const newPin = isRecovery ? $('#recoveryPin').value : pendingPin;
+    if (!isSixDigitPin(token)) { feedback.textContent = 'Enter the six-digit code from your email.'; return; }
+    if (!isSixDigitPin(newPin)) { feedback.textContent = 'Your PIN must contain exactly six digits.'; return; }
+    if (isRecovery && newPin !== $('#recoveryPinConfirm').value) { feedback.textContent = 'The PIN entries do not match.'; return; }
+    button.disabled = true; button.textContent = 'Verifying…';
+    try {
+      const { data, error } = await supabase.auth.verifyOtp({ email, token, type: 'email' });
+      if (error) throw error;
+      if (!data?.user || !data?.session) throw new Error('Email verification did not create a session. Request a new code and try again.');
+      const { error: pinError } = await supabase.auth.updateUser({ password: newPin });
+      if (pinError) throw pinError;
+      closeModal();
+      await hydrate(data.user, { force: true });
+      toast(isRecovery ? 'Your PIN has been reset.' : 'Your email is verified. Welcome to SkillSprint.');
+    } catch (error) {
+      feedback.textContent = friendlyError(error);
+      button.disabled = false; button.textContent = isRecovery ? 'Verify & update PIN' : 'Verify email & finish signup';
+    }
+  });
 }
 
 function bindAuthUI() {
@@ -1520,50 +1588,56 @@ function bindAuthUI() {
     const showing = authPassword.type === 'text';
     authPassword.type = showing ? 'password' : 'text';
     $('#authPasswordToggle').setAttribute('aria-pressed', String(!showing));
-    $('#authPasswordToggle').setAttribute('aria-label', showing ? 'Show password' : 'Hide password');
+    $('#authPasswordToggle').setAttribute('aria-label', showing ? 'Show PIN' : 'Hide PIN');
   });
-  $('#forgotPassword')?.addEventListener('click', () => sendPasswordReset(authEmail.value));
+  $('#forgotPassword')?.addEventListener('click', async () => {
+    const button = $('#forgotPassword');
+    button.disabled = true;
+    try { await startPinRecovery(authEmail.value); }
+    catch (error) { say(friendlyError(error), true); }
+    finally { button.disabled = false; }
+  });
   authForm?.addEventListener('submit', async (event) => {
     event.preventDefault();
     if (authSubmit.disabled) return;
     const email = authEmail.value.trim().toLowerCase();
     const username = normalizeUsername(authUsername.value);
     const displayName = authDisplayName.value.trim();
-    const password = authPassword.value;
+    const pin = authPassword.value;
     if (!email || !authEmail.checkValidity()) { say('Enter a valid email address.', true); authEmail.focus(); return; }
-    if (password.length < 8) { say('Use a password with at least 8 characters.', true); authPassword.focus(); return; }
+    if (!isSixDigitPin(pin)) { say('Your PIN must contain exactly six digits.', true); authPassword.focus(); return; }
     if (authMode === 'signup' && !isValidUsername(username)) {
       say('Username must be 3–20 characters using letters, numbers or underscores.', true); authUsername.focus(); return;
     }
     if (authMode === 'signup' && displayName.length < 2) {
       say('Enter a display name with at least 2 characters.', true); authDisplayName.focus(); return;
     }
-    if (authMode === 'signup' && password !== authConfirmPassword.value) {
-      say('The passwords do not match. Check both fields and try again.', true); authConfirmPassword.focus(); return;
+    if (authMode === 'signup' && pin !== authConfirmPassword.value) {
+      say('The PINs do not match. Check both fields and try again.', true); authConfirmPassword.focus(); return;
     }
 
     authSubmit.disabled = true;
-    authSubmit.querySelector('span').textContent = authMode === 'signup' ? 'Creating account…' : 'Signing in…';
+    authSubmit.querySelector('span').textContent = authMode === 'signup' ? 'Sending verification…' : 'Signing in…';
     try {
       if (authMode === 'signup') {
-        say('Creating your account…');
-        const { data, error } = await supabase.auth.signUp({
+        const { error } = await supabase.auth.signInWithOtp({
           email,
-          password,
-          options: { data: { username, display_name: displayName } },
+          options: {
+            shouldCreateUser: true,
+            data: { username, display_name: displayName },
+          },
         });
         if (error) throw error;
-        if (data?.session && data?.user) {
-          await hydrate(data.user, { force: true });
-          try { await updateProfile({ timezone: localTimeZone() }); } catch { /* Time zone is a convenience, not an account-creation blocker. */ }
-          toast('Welcome to SkillSprint. Your account is ready.');
-        } else {
-          say('Your account was created. Check your email for the confirmation link, then return here to sign in.');
-        }
+        showPinOtpModal(email, pin, 'signup');
+        say('Verification code sent. Check your email to finish creating your account.');
       } else {
-        say('Signing you in…');
-        const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-        if (error) throw error;
+        const { data, error } = await supabase.auth.signInWithPassword({ email, password: pin });
+        if (error) {
+          if (/invalid login credentials/i.test(error.message || '')) {
+            throw new Error('Email or PIN is incorrect. If this is an older account that has not been upgraded yet, use Forgot PIN? to verify your email and set your PIN.');
+          }
+          throw error;
+        }
         if (!data?.session || !data?.user) throw new Error('Sign-in did not return a session. Please try again.');
         await hydrate(data.user, { force: true });
         toast('You are signed in.');
@@ -1572,7 +1646,7 @@ function bindAuthUI() {
       say(friendlyError(error), true);
     } finally {
       authSubmit.disabled = false;
-      authSubmit.querySelector('span').textContent = authMode === 'signup' ? 'Create account' : 'Sign in';
+      authSubmit.querySelector('span').textContent = authMode === 'signup' ? 'Verify email & create account' : 'Sign in';
     }
   });
 }
