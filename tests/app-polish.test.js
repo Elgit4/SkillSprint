@@ -50,5 +50,5 @@ test('practice topics and category loop are loaded from published lessons', () =
 test('manifest references the supplied standard app icons', () => {
   assert.ok(manifest.icons.some((x)=>x.src.includes('icon-512.png')));
   assert.ok(manifest.icons.some((x)=>x.src.includes('icon-maskable-512.png')));
-  assert.match(html, /rel="icon" type="image\/svg\+xml" href="\/icons\/icon\.svg"/);
+  assert.match(html, /rel="icon" type="image\/png" sizes="192x192" href="\/icons\/icon-192\.png"/);
 });
