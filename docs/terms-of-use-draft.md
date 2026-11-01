@@ -29,7 +29,7 @@ You may use SkillSprint for lawful personal learning and practice. You must not:
 
 SkillSprint provides educational material and practice questions. Content may contain errors or become outdated. It is not a substitute for professional advice, accredited certification or formal assessment. Learning results, XP and achievements reflect activity recorded by the service and are not guarantees of competence, employment or academic credit.
 
-Offline answers are saved locally and checked by the server after reconnection. Correctness and XP are not final until server validation succeeds. Users should keep the app connected periodically to synchronise progress.
+A live internet connection is required to load lessons, submit answers and update learning progress. The server validates every answer and records XP; the client does not determine correctness or award XP on its own.
 
 ## 5. Intellectual property
 
@@ -39,7 +39,7 @@ You retain rights in material you independently create. If the product later acc
 
 ## 6. Availability and changes
 
-The service may be updated, interrupted or withdrawn for maintenance, security, legal or operational reasons. Offline availability depends on the device, browser storage, prior successful sign-in and previously cached content. Local browser storage may be cleared or evicted. Do not rely on it as the only copy of important work.
+The service may be updated, interrupted or withdrawn for maintenance, security, legal or operational reasons. Offline lesson access is not provided in the current release. Code Playground drafts may be stored in the current browser profile and can be cleared by the browser or user; they are not synced to your account. Do not rely on browser storage as the only copy of important work.
 
 ## 7. Suspension and termination
 
@@ -47,7 +47,7 @@ The operator may restrict or suspend access where reasonably necessary to protec
 
 ## 8. Privacy
 
-The Privacy Notice explains the information SkillSprint processes, its purposes, service providers, offline storage and user choices. Read it before using the service. The Privacy Notice is not a substitute for a valid lawful basis or the operator's statutory obligations.
+The Privacy Notice explains the information SkillSprint processes, its purposes, service providers, on-device Code Playground draft storage and user choices. Read it before using the service. The Privacy Notice is not a substitute for a valid lawful basis or the operator's statutory obligations.
 
 ## 9. Disclaimers and liability
 
