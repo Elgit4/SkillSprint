@@ -409,3 +409,22 @@ button[disabled],.btn[disabled]{cursor:not-allowed;opacity:.58}
   .practice-complete-stats>div{padding:11px 5px}
   .practice-complete-stats strong{font-size:21px}
 }
+
+
+/* App hydration: show a deliberate second-stage loader while private data syncs. */
+.app.is-hydrating > :not(#appHydrationScreen){visibility:hidden!important}
+.app-hydration-screen{display:none}
+.app.is-hydrating .app-hydration-screen{position:fixed;inset:0;z-index:96;display:grid;place-items:center;padding:24px;background:radial-gradient(ellipse at 50% 34%,#f1efff 0%,#f7f5f0 62%);color:#211d2b}
+.app-hydration-card{display:grid;justify-items:center;gap:12px;width:min(390px,100%);padding:30px 26px;border:1px solid #e7e2f1;border-radius:25px;background:#fffefa;box-shadow:0 22px 60px rgba(38,30,67,.09);text-align:center}
+.app-hydration-mark{display:grid;place-items:center;width:46px;height:46px;border:3px solid #e8e3fb;border-top-color:#7057e8;border-radius:50%;animation:ss-hydration-spin .85s linear infinite}
+.app-hydration-mark span{width:9px;height:9px;border-radius:50%;background:#c9f06b}
+.app-hydration-eyebrow{margin:3px 0 0;color:#7057e8;font-size:9px;font-weight:900;letter-spacing:.14em}
+.app-hydration-card h2{margin:0;font-size:21px;letter-spacing:-.04em}
+.app-hydration-card p:not(.app-hydration-eyebrow){max-width:300px;margin:0;color:#777281;font-size:12px;line-height:1.6}
+.app-hydration-card #appHydrationRetry{display:none;margin-top:5px}
+.app.is-hydration-error .app-hydration-mark{animation:none;border-color:#ffb66d}
+.app.is-hydration-error .app-hydration-mark span{background:#ff8a65}
+.app.is-hydration-error .app-hydration-card #appHydrationRetry{display:inline-flex}
+@keyframes ss-hydration-spin{to{transform:rotate(360deg)}}
+@media(prefers-reduced-motion:reduce){.app-hydration-mark{animation:none}}
+.studio-download-button svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
