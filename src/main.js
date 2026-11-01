@@ -1020,7 +1020,7 @@ function openEditProfile() {
   let selectedAvatar = safeAvatarSource(profile.avatar_url) || AVATAR_OPTIONS[0].src;
   const avatarMarkup = AVATAR_OPTIONS.map((avatar) => `<button class="avatar-choice ${selectedAvatar === avatar.src ? 'selected' : ''}" type="button" data-avatar-choice="${avatar.src}" aria-pressed="${selectedAvatar === avatar.src}" aria-label="Choose ${avatar.name} avatar"><img src="${avatar.src}" alt=""><span>${avatar.name}</span></button>`).join('');
   openModal(`<h2 id="modalTitle">Edit your profile</h2>
-    <p class="muted">Choose a learner avatar, then update your public identity. Your email stays private.</p>
+    <p class="muted">Choose a learner avatar, then update your public identity. Your sign-in details are not shown on your public profile.</p>
     <form id="profileEditForm" class="settings-form">
       <label>Choose your avatar</label>
       <div class="avatar-picker" id="avatarPicker" role="group" aria-label="Choose a SkillSprint avatar">${avatarMarkup}
