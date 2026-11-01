@@ -222,6 +222,7 @@ async function requestAppInstall() {
 }
 function setupInstallExperience() {
   syncInstalledUI();
+  if (navigator.storage?.persist) navigator.storage.persist().catch(() => {});
   installButtons().forEach((button) => button.addEventListener('click', () => { void requestAppInstall(); }));
   window.addEventListener('beforeinstallprompt', (event) => {
     event.preventDefault();
@@ -489,6 +490,7 @@ function latestAttempt(lessonId) {
 
 function isReviewMiss(lessonId) {
   const attempt = latestAttempt(lessonId);
+  if (attempt?.pending) return false;
   if (attempt) return !attempt.is_correct;
   if (state.completed.has(lessonId)) return false;
   return state.events.some((event) => event.event_type === 'lesson.skipped' && event.payload?.lesson_id === lessonId);
