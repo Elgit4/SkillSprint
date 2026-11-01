@@ -152,7 +152,7 @@ function closeModal() {
 
 function friendlyError(error) {
   const raw = error?.message || String(error || 'Something went wrong.');
-  if (/invalid login credentials/i.test(raw)) return 'Email or password is incorrect. Check your details or create an account.';
+  if (/invalid login credentials/i.test(raw)) return 'Email or PIN is incorrect. Check your details, or use Forgot PIN? to verify your email and set a new PIN.';
   if (/email not confirmed/i.test(raw)) return 'This account still needs email confirmation. Check your inbox or review your Supabase email-confirmation settings.';
   if (/over_email_send_rate_limit|email rate limit exceeded/i.test(raw)) return 'Supabase has temporarily limited email delivery. Wait before requesting another email, or configure a verified SMTP sender.';
   if (/already registered|user already exists/i.test(raw)) return 'An account with this email already exists. Switch to Sign in.';
