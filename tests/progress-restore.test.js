@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { readFile } from 'node:fs/promises';
 import { completedLessonIds, mergeLessonIds, createSerialQueue } from '../src/lib/progress-state.js';
 
 test('completedLessonIds accepts only explicitly correct attempts and trims IDs', () => {
@@ -42,4 +43,14 @@ test('serial queue runs tasks in order and recovers after a rejected task', asyn
   await assert.rejects(failed, /expected failure/);
   await third;
   assert.deepEqual(order, ['first', 'failed', 'third']);
+});
+
+test('full hydration wraps paginated user-row arrays before reading Supabase result data', async () => {
+  const main = await readFile(new URL('../src/main.js', import.meta.url), 'utf8');
+  const start = main.indexOf('async function loadApplicationData(');
+  const end = main.indexOf('async function refreshUserProgress(', start);
+  assert.ok(start >= 0 && end > start, 'Expected the full application data loader');
+  const loader = main.slice(start, end);
+  assert.equal((loader.match(/fetchAllUserRows\\([\\s\\S]*?\\)\\.then\\(\\(data\\) => \\({ data, error: null }\\)\\)/g) || []).length, 2,
+    'Both lesson attempts and learning events must be adapted to the common result shape');
 });
