@@ -5,19 +5,25 @@ const html = readFileSync(new URL('../index.html', import.meta.url), 'utf8');
 const js = readFileSync(new URL('../src/main.js', import.meta.url), 'utf8');
 const css = readFileSync(new URL('../src/styles/auth.css', import.meta.url), 'utf8');
 const manifest = JSON.parse(readFileSync(new URL('../public/manifest.webmanifest', import.meta.url), 'utf8'));
-test('uses the real SkillSprint logo on boot, welcome, auth and app header', () => {
-  assert.match(html, /ss-boot-logo/);
+
+test('keeps the boot screen to a neutral spinner and retains product branding in the app', () => {
+  const start = html.indexOf('<div id="ssBootScreen"');
+  const end = html.indexOf('</div>', start);
+  const boot = start >= 0 && end >= 0 ? html.slice(start, end + 6) : '';
+  assert.match(boot, /ss-boot-spinner/);
+  assert.doesNotMatch(boot, /<img|logo|wordmark|Getting things ready/i);
   assert.match(html, /brand\/skillsprint-wordmark-light\.png/);
   assert.match(html, /brand\/skillsprint-wordmark\.png/);
   assert.match(html, /auth-mobile-brand[^>]*><img/);
 });
-test('brands the app with ElTech', () => {
+test('brands the app with ElTech without branding the loading screen', () => {
   assert.match(html, /Powered by <strong>ElTech<\/strong>/);
-  assert.match(html, /ss-boot-powered/);
+  assert.doesNotMatch(html, /ss-boot-powered/);
 });
-test('navigation no longer triggers smooth document scrolling', () => {
+test('navigation uses only the moving indicator, without a practice-button blue box', () => {
   assert.doesNotMatch(js, /window\.scrollTo\(/);
-  assert.match(css, /dock-indicator\{display:block!important/);
+  assert.match(html, /nav-item\[data-tab="practice"\]\.active\{[^}]*background:transparent!important/);
+  assert.match(html, /nav-item:focus:not\(:focus-visible\)\{outline:none!important/);
 });
 test('installed app hides all install entry points', () => {
   assert.match(js, /function syncInstalledUI\(\)/);
@@ -38,10 +44,11 @@ test('practice topics and category loop are loaded from published lessons', () =
   assert.match(js, /startPracticeLoop/);
   assert.match(js, /advancePracticeLoop/);
   assert.match(js, /createSkippedEvent/);
-  assert.match(html, /id=\"practicePathSelect\"/);
-  assert.match(js, /categoryChips.innerHTML/);
+  assert.match(html, /id="practicePathSelect"/);
+  assert.match(js, /categoryChips\.innerHTML/);
 });
-test('manifest references supplied app icons', () => {
+test('manifest references the supplied standard app icons', () => {
   assert.ok(manifest.icons.some((x)=>x.src.includes('icon-512.png')));
   assert.ok(manifest.icons.some((x)=>x.src.includes('icon-maskable-512.png')));
+  assert.match(html, /rel="icon" type="image\/svg\+xml" href="\/icons\/icon\.svg"/);
 });
