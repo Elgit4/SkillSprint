@@ -1,5 +1,5 @@
 /* SkillSprint offline app shell — versioned to allow safe updates. */
-const VERSION = 'skillsprint-shell-v3';
+const VERSION = 'skillsprint-shell-v4';
 const SHELL_CACHE = `${VERSION}-shell`;
 const ASSET_CACHE = `${VERSION}-assets`;
 const SHELL_URLS = [
