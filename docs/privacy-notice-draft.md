@@ -23,7 +23,7 @@ Depending on how you use the service, SkillSprint may process:
 - **Profile information:** avatar selection and time-zone preference.
 - **Learning information:** published lessons viewed, submitted answers, correctness results, completion status, XP, achievements, streak/progress information and skipped-question events.
 - **Technical information:** information necessarily processed by the hosting, authentication and security services to deliver the application, such as request and security logs. Confirm the exact fields and retention with each provider before publication.
-- **On-device offline information:** a copy of the published learning catalogue and your profile/progress data, plus queued answer and skip actions, stored in IndexedDB and the browser's service-worker cache on the device where you use SkillSprint.
+- **On-device workspace information:** Code Playground drafts and limited app preferences may be stored in the browser on the device where you use SkillSprint. The current release does not store offline lesson catalogues, progress snapshots or queued answers.
 
 Do not add analytics, advertising identifiers, payment information, location tracking or other data categories to this notice unless the product actually collects them.
 
@@ -36,7 +36,7 @@ We use the information above to:
 - display profiles and learning paths;
 - check submitted answers on the server and maintain learning records;
 - calculate progress, XP, achievements and streaks;
-- keep a local learning copy and queue actions when the device is offline, then synchronise those actions when the connection returns;
+- allow learners to save Code Playground drafts locally on the device they are using;
 - maintain, secure, troubleshoot and improve the service; and
 - respond to privacy, support and legal requests.
 
@@ -52,17 +52,15 @@ The current application uses **Supabase** for authentication and its hosted Post
 
 We do not intentionally put private answer keys in the published lesson catalogue. Access to learner records is controlled by authenticated database policies. Confirm the live access policies and provider agreements before publication.
 
-## 5. Offline storage and shared devices
+## 5. On-device storage and shared devices
 
-After a learner signs in while connected, SkillSprint can save the published learning catalogue and that learner's progress locally so the lessons can be reopened without a network connection. Answers and skips made offline remain pending until the server receives and validates them. The device does not determine correctness or award XP while offline.
+The current release does not provide offline lessons, offline answer submission or background synchronisation. Lesson content and progress are loaded from Supabase while the device is connected. The app unregisters older SkillSprint service workers and clears its own legacy offline caches when it starts.
 
-Offline data is tied to the signed-in account identifier in that browser's local database. It is not encrypted by the application beyond the browser/device's own security controls. Anyone with access to an unlocked shared device or browser profile may be able to inspect local browser storage. Sign out on shared devices and use a device lock.
-
-Browser storage may be removed by the learner, browser settings, private-browsing mode, device cleanup or storage eviction. Offline storage is not a backup and does not replace server-side account records.
+The Code Playground can save drafts in browser storage on the current device. These drafts are not automatically synced to the learner's account and may be lost if browser data is cleared. Anyone with access to an unlocked shared device or browser profile may be able to inspect local drafts. Sign out on shared devices and use a device lock.
 
 ## 6. Retention and deletion
 
-Account and learning records are retained for [DEFINE A SPECIFIC RETENTION PERIOD AND BUSINESS/LEGAL REASONS]. Offline copies remain on the device until the browser removes them or the application provides a verified deletion process.
+Account and learning records are retained for [DEFINE A SPECIFIC RETENTION PERIOD AND BUSINESS/LEGAL REASONS]. Code Playground drafts remain in the browser profile until the learner or browser clears that local data; they are not server-side account records.
 
 To request access, correction or deletion, contact [PRIVACY EMAIL]. Explain the identity-verification process, response timeframe, exceptions and how the operator will delete or anonymise data in Supabase backups and operational logs. A complete in-app account deletion workflow is not yet verified; implement and test it before promising immediate self-service deletion.
 
@@ -70,7 +68,7 @@ To request access, correction or deletion, contact [PRIVACY EMAIL]. Explain the 
 
 Subject to applicable law, you may have rights to be informed about processing, access your information, request correction, object to or restrict certain processing, and seek deletion where the law permits. Contact [PRIVACY EMAIL] to make a request.
 
-You can clear the local offline copy using your browser's site-data controls, but doing so does not delete the server-side account or learning records.
+You can clear locally saved Code Playground drafts using your browser's site-data controls, but doing so does not delete the server-side account or learning records.
 
 You may also contact Ghana's Data Protection Commission: https://dpc.gov.gh/
 
