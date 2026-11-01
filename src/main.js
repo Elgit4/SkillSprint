@@ -1,6 +1,5 @@
 import './styles/auth.css';
 import { downloadBlob } from './lib/download.js';
-import { saveOfflineSnapshot, loadOfflineSnapshot, enqueueOfflineAction, listOfflineActions, removeOfflineAction, countOfflineActions } from './lib/offline-store.js';
 import { supabase, isSupabaseConfigured } from './lib/supabase.js';
 import {
   createPracticeSession,
@@ -222,7 +221,6 @@ async function requestAppInstall() {
 }
 function setupInstallExperience() {
   syncInstalledUI();
-  if (navigator.storage?.persist) navigator.storage.persist().catch(() => {});
   installButtons().forEach((button) => button.addEventListener('click', () => { void requestAppInstall(); }));
   window.addEventListener('beforeinstallprompt', (event) => {
     event.preventDefault();
@@ -237,23 +235,7 @@ function setupInstallExperience() {
     toast('SkillSprint has been installed on this device.');
   });
   window.addEventListener('pageshow', syncInstalledUI);
-  window.addEventListener('offline', () => { void setOfflineStatus(); });
-  window.addEventListener('online', async () => {
-    if (!state.user?.id) return;
-    try { const result = await syncOfflineQueue(state.user.id); if (result.synced) await refresh(); if (result.synced) toast(`Synced ${result.synced} offline learning actions.`); }
-    catch (error) { console.warn('Offline learning sync will retry:', error); }
-  });
   document.addEventListener('visibilitychange', () => { if (!document.hidden) syncInstalledUI(); });
-  if ('serviceWorker' in navigator && /^https?:$/.test(location.protocol)) {
-    const base = import.meta.env.BASE_URL || '/';
-    const workerPath = `${base.endsWith('/') ? base : `${base}/`}sw.js`;
-    const workerUrl = new URL(workerPath, location.href);
-    window.addEventListener('load', () => {
-      navigator.serviceWorker.register(workerUrl.href, { scope: base })
-        .then((registration) => registration.update().catch(() => {}))
-        .catch((error) => console.warn('SkillSprint offline support could not be registered:', error));
-    }, { once: true });
-  }
 }
 const bootStartedAt = Date.now();
 function finishInitialBoot() {
@@ -675,7 +657,7 @@ function renderProgress() {
   }
 }
 
-async function fetchAllPublishedLessons(pageSize = 500) {
+async function fetchAllPublishedLessons(pageSize = 1000) {
   const columns = 'id,path_id,type,category,title,subtitle,body,content,reward_xp,sort_order';
   const rows = [];
   let from = 0;
@@ -698,78 +680,6 @@ async function fetchAllPublishedLessons(pageSize = 500) {
   }
 
   return rows;
-}
-
-async function cacheCurrentLearningState(userId = state.user?.id) {
-  if (!userId) return;
-  await saveOfflineSnapshot(userId, {
-    profile: state.profile,
-    progress: state.progress,
-    paths: state.paths,
-    lessons: state.lessons,
-    earned: [...state.earned],
-    attempts: state.attempts,
-    events: state.events,
-    achievements: state.achievements,
-    completed: [...state.completed],
-  });
-}
-
-function applyOfflineSnapshot(snapshot) {
-  if (!snapshot) return false;
-  state.profile = snapshot.profile || null;
-  state.progress = snapshot.progress || null;
-  state.paths = snapshot.paths || [];
-  state.lessons = snapshot.lessons || [];
-  state.earned = new Set(snapshot.earned || []);
-  state.attempts = snapshot.attempts || [];
-  state.events = snapshot.events || [];
-  state.achievements = snapshot.achievements || [];
-  state.completed = new Set(snapshot.completed || state.attempts.filter((attempt) => attempt.is_correct).map((attempt) => attempt.lesson_id));
-  renderProfile(); renderStats(); renderPathCards(); renderPractice(); renderProgress(); updateContinueCards();
-  return true;
-}
-
-async function setOfflineStatus(pending) {
-  const node = $('#offlineStatus');
-  if (!node) return;
-  const count = pending ?? (state.user?.id ? await countOfflineActions(state.user.id).catch(() => 0) : 0);
-  node.hidden = navigator.onLine && count === 0;
-  node.textContent = !navigator.onLine
-    ? `Offline learning · ${count} saved action${count === 1 ? '' : 's'} waiting to sync`
-    : count ? `${count} learning action${count === 1 ? '' : 's'} waiting to sync` : '';
-}
-
-async function syncOfflineQueue(userId = state.user?.id) {
-  if (!userId || !navigator.onLine) return { synced: 0, pending: 0 };
-  const queued = await listOfflineActions(userId);
-  let synced = 0;
-  for (const item of queued) {
-    try {
-      const result = item.type === 'answer'
-        ? await supabase.rpc('submit_lesson_attempt', { p_lesson_id: item.lessonId, p_answer: item.answer, p_duration_seconds: item.durationSeconds })
-        : await supabase.rpc('record_lesson_skip', { p_lesson_id: item.lessonId });
-      if (result.error) throw result.error;
-      await removeOfflineAction(item.id);
-      synced += 1;
-    } catch (error) {
-      console.warn('A saved offline learning action is waiting to sync:', error);
-      break;
-    }
-  }
-  const pending = await countOfflineActions(userId);
-  await setOfflineStatus(pending);
-  return { synced, pending };
-}
-
-async function refreshFromOfflineCache(userId) {
-  const snapshot = await loadOfflineSnapshot(userId);
-  if (!applyOfflineSnapshot(snapshot)) return false;
-  const pending = await countOfflineActions(userId);
-  await setOfflineStatus(pending);
-  setText('appHydrationTitle', 'Your offline learning space is ready');
-  setText('appHydrationMessage', 'Your saved lessons are available. Answers and skips will sync when you reconnect.');
-  return true;
 }
 
 async function fetchAllUserRows(table, columns, userId, timestampColumn, pageSize = 500) {
@@ -836,16 +746,6 @@ async function refresh() {
   renderPractice();
   renderProgress();
   updateContinueCards();
-  try {
-    await cacheCurrentLearningState(userId);
-    const syncResult = await syncOfflineQueue(userId);
-    if (syncResult.synced > 0) {
-      await refresh();
-      return;
-    }
-  } catch (offlineError) {
-    console.warn('Could not update SkillSprint offline learning data:', offlineError);
-  }
 }
 
 function updateContinueCards() {
@@ -970,21 +870,6 @@ function openLesson(lessonId, { loop = true } = {}) {
     submitButton.textContent = 'Checking…';
     try {
       const duration = Math.min(7200, Math.max(0, Math.floor((Date.now() - startedAt) / 1000)));
-      if (!navigator.onLine) {
-        await enqueueOfflineAction(state.user.id, { type: 'answer', lessonId: lesson.id, answer: selectedAnswer, durationSeconds: duration });
-        state.attempts.unshift({ lesson_id: lesson.id, is_correct: false, pending: true, attempted_at: new Date().toISOString(), duration_seconds: duration, xp_awarded: 0 });
-        await cacheCurrentLearningState();
-        finished = true;
-        if (feedback) feedback.textContent = 'Saved on this device. Your answer will be checked when you reconnect.';
-        submitButton.hidden = true;
-        const nextButton = $('#nextPracticeQuestion');
-        if (nextButton) { nextButton.hidden = false; nextButton.textContent = 'Continue to next question →'; nextButton.focus(); }
-        const skipButton = $('#skipPracticeQuestion');
-        if (skipButton) skipButton.hidden = true;
-        await setOfflineStatus();
-        toast('Answer saved on this device.');
-        return;
-      }
       const { data, error } = await supabase.rpc('submit_lesson_attempt', {
         p_lesson_id: lesson.id,
         p_answer: selectedAnswer,
@@ -1019,7 +904,7 @@ function openLesson(lessonId, { loop = true } = {}) {
           state.practiceSession = pruneResolvedReviewQuestions(state.practiceSession, isReviewMiss);
         }
         const xp = Number(result.xp_awarded || 0);
-        if (feedback) feedback.textContent = `${content.explanation || 'Correct. Well done!'} ${xp > 0 ? `You earned ${xp} XP.` : 'You have already earned XP for this lesson.'} ${synced ? 'Your progress is up to date.' : 'Your progress will sync when the app reconnects.'}`;
+        if (feedback) feedback.textContent = `${content.explanation || 'Correct. Well done!'} ${xp > 0 ? `You earned ${xp} XP.` : 'You have already earned XP for this lesson.'} ${synced ? 'Your progress is up to date.' : 'Your progress may take a moment to refresh.'}`;
         if (loop) {
           submitButton.hidden = true;
           const nextButton = $('#nextPracticeQuestion');
@@ -1040,21 +925,6 @@ function openLesson(lessonId, { loop = true } = {}) {
         submitButton.disabled = options.length ? !selectedAnswer : !(response?.value.trim());
       }
     } catch (error) {
-      if (!navigator.onLine && state.user?.id) {
-        try {
-          const duration = Math.min(7200, Math.max(0, Math.floor((Date.now() - startedAt) / 1000)));
-          await enqueueOfflineAction(state.user.id, { type: 'answer', lessonId: lesson.id, answer: selectedAnswer, durationSeconds: duration });
-          state.attempts.unshift({ lesson_id: lesson.id, is_correct: false, pending: true, attempted_at: new Date().toISOString(), duration_seconds: duration, xp_awarded: 0 });
-          await cacheCurrentLearningState();
-          finished = true;
-          if (feedback) feedback.textContent = 'Saved on this device. Your answer will be checked after you reconnect.';
-          submitButton.hidden = true;
-          const nextButton = $('#nextPracticeQuestion');
-          if (nextButton) { nextButton.hidden = false; nextButton.textContent = 'Continue to next question →'; }
-          await setOfflineStatus();
-          return;
-        } catch (queueError) { error = queueError; }
-      }
       if (feedback) feedback.textContent = friendlyError(error);
       submitButton.textContent = 'Try again';
       submitButton.disabled = false;
@@ -1080,20 +950,10 @@ function openLesson(lessonId, { loop = true } = {}) {
       renderPractice();
       advancePracticeLoop();
       try {
-        if (!navigator.onLine) {
-          await enqueueOfflineAction(state.user.id, { type: 'skip', lessonId: lesson.id });
-          await cacheCurrentLearningState();
-          await setOfflineStatus();
-          return;
-        }
         const { data, error } = await supabase.rpc('record_lesson_skip', { p_lesson_id: lesson.id });
         if (error) throw error;
         if (data?.occurred_at) skippedEvent.occurred_at = data.occurred_at;
       } catch (error) {
-        if (!navigator.onLine && state.user?.id) {
-          try { await enqueueOfflineAction(state.user.id, { type: 'skip', lessonId: lesson.id }); await cacheCurrentLearningState(); await setOfflineStatus(); return; }
-          catch (queueError) { error = queueError; }
-        }
         toast(`This question was skipped for the session, but Review Misses could not be synced. ${friendlyError(error)}`);
       }
     });
@@ -1566,19 +1426,9 @@ async function hydrate(user, { force = false } = {}) {
       if (authMessage) authMessage.textContent = '';
     } catch (error) {
       state.hydratedUserId = null;
-      let restored = false;
-      try { restored = await refreshFromOfflineCache(user.id); }
-      catch (cacheError) { console.warn('Could not read saved offline learning data:', cacheError); }
-      if (restored) {
-        const target = location.hash.replace(/^#\/?/, '').split(/[?&]/)[0];
-        nav(knownPages.has(target) ? target : 'home');
-        app?.classList.remove('is-hydrating', 'is-hydration-error');
-        toast('Offline learning is ready. Your saved actions will sync when you reconnect.');
-      } else {
-        app?.classList.add('is-hydrating', 'is-hydration-error');
-        setText('appHydrationTitle', 'We could not load your learning space');
-        setText('appHydrationMessage', friendlyError(error));
-      }
+      app?.classList.add('is-hydrating', 'is-hydration-error');
+      setText('appHydrationTitle', 'We could not load your learning space');
+      setText('appHydrationMessage', friendlyError(error));
     }
   })();
   hydrationPromise = work;
