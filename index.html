@@ -707,6 +707,46 @@ body{background:#f6f4ef}
 .nav-item[data-tab="practice"]{color:#a6a9d3!important}
 .nav-item[data-tab="practice"].active{width:auto!important;height:auto!important;align-self:stretch!important;border-radius:21px!important;background:transparent!important;box-shadow:none!important;color:#fff!important}
 .nav-item[data-tab="practice"] span{display:block!important}
+
+
+/* Readability pass: lift the smallest interface labels without changing layout scale. */
+body :where(
+  .eyebrow,
+  .stat span,
+  .meta,
+  .continue-card p,
+  .mission-row p,
+  .xp,
+  .nav-item span,
+  .chip,
+  .skill-meta,
+  .achievement h3,
+  .achievement p,
+  .setting-row small,
+  .level-copy p,
+  .xp-total,
+  .level-foot,
+  .day small,
+  .daily-bottom > span,
+  .claim-btn,
+  .achievement-state,
+  .launch-card small,
+  .map-banner small,
+  .map-banner > b,
+  .playground-tabs button,
+  .playground-note,
+  .map-step small,
+  .map-step em,
+  .settings-choice small,
+  .path-card p,
+  .mission-row .details p,
+  .freeze-btn,
+  .streak-pill
+) {
+  font-size: 12px !important;
+}
+.welcome-credit { font-size: 11px !important; letter-spacing: .12em; }
+.app-credit { font-size: 12px !important; }
 </style>
 </head>
 <body>
