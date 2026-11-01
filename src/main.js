@@ -52,7 +52,6 @@ const state = {
 const gate = $('#authGate');
 const app = $('.app');
 const authForm = $('#authForm');
-const authEmail = $('#authEmail');
 const authPhone = $('#authPhone');
 const authUsername = $('#authUsername');
 const authDisplayName = $('#authDisplayName');
@@ -1486,35 +1485,23 @@ async function hydrate(user, { force = false } = {}) {
 
 function syncAuthMode() {
   const isSignup = authMode === 'signup';
-  const isMigration = authMode === 'migrate';
-  const isSignin = authMode === 'signin';
   $('#authUsernameGroup').hidden = !isSignup;
   $('#authDisplayNameGroup').hidden = !isSignup;
   $('#authConfirmGroup').hidden = !isSignup;
-  $('#authPhoneGroup').hidden = false;
-  $('#authEmailGroup').hidden = !isMigration;
-  authUsername.required = isSignup;
-  authDisplayName.required = isSignup;
+  $('#authUsername').required = isSignup;
+  $('#authDisplayName').required = isSignup;
   authConfirmPassword.required = isSignup;
   authPhone.required = true;
-  authEmail.required = isMigration;
   authPhone.autocomplete = 'tel';
   authPhone.inputMode = 'tel';
   authPhone.placeholder = '024 123 4567';
-  authEmail.autocomplete = 'email';
-  authEmail.placeholder = 'The email used on your old account';
   authPassword.autocomplete = isSignup ? 'new-password' : 'current-password';
-  authPassword.placeholder = isSignup
-    ? 'Create a 6-digit PIN'
-    : isMigration
-      ? 'Enter the password or PIN used on your old account'
-      : 'Enter your 6-digit PIN';
-  authPassword.inputMode = isMigration ? 'text' : 'numeric';
-  authPassword.maxLength = isMigration ? 72 : 6;
-  authPassword.minLength = isMigration ? 1 : 6;
-  if (isMigration) authPassword.removeAttribute('pattern');
-  else authPassword.pattern = '[0-9]{6}';
-  $('label[for="authPassword"]').textContent = isMigration ? 'Existing account password or PIN' : 'Six-digit PIN';
+  authPassword.placeholder = isSignup ? 'Create a 6-digit PIN' : 'Enter your 6-digit PIN';
+  authPassword.inputMode = 'numeric';
+  authPassword.maxLength = 6;
+  authPassword.minLength = 6;
+  authPassword.pattern = '[0-9]{6}';
+  $('label[for="authPassword"]').textContent = 'Six-digit PIN';
   authConfirmPassword.value = '';
   authConfirmPassword.placeholder = 'Enter the PIN again';
   authConfirmPassword.inputMode = 'numeric';
@@ -1523,81 +1510,24 @@ function syncAuthMode() {
   authConfirmPassword.pattern = '[0-9]{6}';
   authUsername.value = '';
   authDisplayName.value = '';
-  $('#authPhoneLabel').textContent = isMigration ? 'Telephone number to link' : 'Telephone number';
-  $('#authTitle').textContent = isSignup ? 'Create your account' : isMigration ? 'Move your existing account' : 'Sign in to SkillSprint';
-  $('#authFormEyebrow').textContent = isSignup ? 'GET STARTED' : isMigration ? 'ONE-TIME ACCOUNT MOVE' : 'WELCOME BACK';
+  $('#authPhoneLabel').textContent = 'Telephone number';
+  $('#authTitle').textContent = isSignup ? 'Create your account' : 'Sign in to SkillSprint';
+  $('#authFormEyebrow').textContent = isSignup ? 'GET STARTED' : 'WELCOME BACK';
   $('#authIntro').textContent = isSignup
-    ? 'Create your account with a telephone number and reusable six-digit PIN. No email or SMS code is used.'
-    : isMigration
-      ? 'Sign in with the email and PIN you already use, then attach your telephone number. Your existing progress stays with this account.'
-      : 'Sign in using your telephone number and reusable six-digit PIN.';
-  $('#authSwitchText').textContent = isSignup ? 'Already have an account?' : isMigration ? 'Back to phone sign in?' : 'New to SkillSprint?';
+    ? 'Create a new account with your telephone number and reusable six-digit PIN. No email or SMS code is used.'
+    : 'Sign in using your telephone number and six-digit PIN.';
+  $('#authSwitchText').textContent = isSignup ? 'Already have an account?' : 'New to SkillSprint?';
   $('#authModeToggle').innerHTML = isSignup ? 'Sign in instead <span aria-hidden="true">→</span>' : 'Create an account <span aria-hidden="true">→</span>';
-  $('#authMigrationToggle').hidden = !isSignin;
-  $('#authMigrationToggle').textContent = 'Move an existing email account';
-  $('#authPasswordRule').textContent = isMigration ? 'Enter it exactly as before' : '6 digits · numbers only';
-  $('#forgotPassword').hidden = !isSignin;
+  $('#authPasswordRule').textContent = '6 digits · numbers only';
+  $('#forgotPassword').hidden = false;
   $('#forgotPassword').textContent = 'Forgot PIN?';
   $('#authFormMetaLabel').textContent = 'Your PIN is protected by Supabase Auth';
-  $('#authSubmit').querySelector('span').textContent = isSignup ? 'Create account' : isMigration ? 'Sign in & link number' : 'Sign in';
+  $('#authSubmit').querySelector('span').textContent = isSignup ? 'Create account' : 'Sign in';
   if (authMessage) { authMessage.textContent = ''; authMessage.dataset.error = 'false'; }
 }
 
 function isSixDigitPin(value) {
   return /^[0-9]{6}$/.test(String(value || ''));
-}
-
-function requestMigrationPin() {
-  return new Promise((resolve) => {
-    if (!$('#modalBackdrop')) { resolve(null); return; }
-    let settled = false;
-    const finish = (value) => {
-      if (settled) return;
-      settled = true;
-      document.removeEventListener('keydown', onKeydown);
-      $('#modalBackdrop')?.removeEventListener('click', onBackdrop);
-      closeModal();
-      resolve(value);
-    };
-    const onKeydown = (event) => {
-      if (event.key === 'Escape') finish(null);
-    };
-    const onBackdrop = (event) => {
-      if (event.target?.id === 'modalBackdrop') finish(null);
-    };
-
-    openModal(`<h2 id="modalTitle">Set a six-digit PIN</h2>
-      <p class="muted">Your old account uses a credential that is not a six-digit numeric PIN. Choose a new six-digit PIN for telephone sign-in. Your account and learning progress will remain the same.</p>
-      <form id="migrationPinForm" class="settings-form">
-        <label for="migrationNewPin">New six-digit PIN</label>
-        <input id="migrationNewPin" type="password" inputmode="numeric" autocomplete="new-password" minlength="6" maxlength="6" pattern="[0-9]{6}" required>
-        <label for="migrationConfirmPin">Confirm new PIN</label>
-        <input id="migrationConfirmPin" type="password" inputmode="numeric" autocomplete="new-password" minlength="6" maxlength="6" pattern="[0-9]{6}" required>
-        <button class="btn btn-primary btn-full" type="submit">Save PIN and continue</button>
-        <button class="btn btn-full" id="cancelMigrationPin" type="button">Cancel for now</button>
-        <p class="lesson-feedback" id="migrationPinFeedback" role="status"></p>
-      </form>`, 'Secure account migration');
-
-    $('#migrationPinForm')?.addEventListener('submit', (event) => {
-      event.preventDefault();
-      const pin = $('#migrationNewPin').value;
-      const confirmation = $('#migrationConfirmPin').value;
-      const feedback = $('#migrationPinFeedback');
-      if (!isSixDigitPin(pin)) {
-        feedback.textContent = 'Your new PIN must contain exactly six digits.';
-        return;
-      }
-      if (pin !== confirmation) {
-        feedback.textContent = 'The two PIN entries do not match.';
-        return;
-      }
-      finish(pin);
-    });
-    $('#cancelMigrationPin')?.addEventListener('click', () => finish(null));
-    $('#closeModal')?.addEventListener('click', () => finish(null), { once: true });
-    $('#modalBackdrop')?.addEventListener('click', onBackdrop);
-    document.addEventListener('keydown', onKeydown);
-  });
 }
 
 function normalizePhone(value) {
@@ -1623,11 +1553,6 @@ function bindAuthUI() {
     authMode = authMode === 'signup' ? 'signin' : 'signup';
     syncAuthMode();
   });
-  $('#authMigrationToggle')?.addEventListener('click', () => {
-    authMode = 'migrate';
-    syncAuthMode();
-    authEmail.focus();
-  });
   $('#authPasswordToggle')?.addEventListener('click', () => {
     const showing = authPassword.type === 'text';
     authPassword.type = showing ? 'password' : 'text';
@@ -1639,31 +1564,37 @@ function bindAuthUI() {
     event.preventDefault();
     if (authSubmit.disabled) return;
     const isSignup = authMode === 'signup';
-    const isMigration = authMode === 'migrate';
-    const phone = (() => { try { return normalizePhone(authPhone.value); } catch (error) { say(error.message, true); authPhone.focus(); return null; } })();
-    const email = authEmail.value.trim().toLowerCase();
+    const phone = (() => {
+      try { return normalizePhone(authPhone.value); }
+      catch (error) { say(error.message, true); authPhone.focus(); return null; }
+    })();
     const username = normalizeUsername(authUsername.value);
     const displayName = authDisplayName.value.trim();
     const pin = authPassword.value;
     if (!phone) return;
-    if (isMigration && (!email || !authEmail.checkValidity())) { say('Enter the email address linked to your existing account.', true); authEmail.focus(); return; }
-    if (isMigration ? (!pin || pin.length > 72) : !isSixDigitPin(pin)) {
-      say(isMigration ? 'Enter the existing password or PIN exactly as you used it before.' : 'Your PIN must contain exactly six digits.', true);
+    if (!isSixDigitPin(pin)) {
+      say('Your PIN must contain exactly six digits.', true);
       authPassword.focus();
       return;
     }
     if (isSignup && !isValidUsername(username)) {
-      say('Username must be 3–20 characters using letters, numbers or underscores.', true); authUsername.focus(); return;
+      say('Username must be 3–20 characters using letters, numbers or underscores.', true);
+      authUsername.focus();
+      return;
     }
     if (isSignup && displayName.length < 2) {
-      say('Enter a display name with at least 2 characters.', true); authDisplayName.focus(); return;
+      say('Enter a display name with at least 2 characters.', true);
+      authDisplayName.focus();
+      return;
     }
     if (isSignup && pin !== authConfirmPassword.value) {
-      say('The PINs do not match. Check both fields and try again.', true); authConfirmPassword.focus(); return;
+      say('The PINs do not match. Check both fields and try again.', true);
+      authConfirmPassword.focus();
+      return;
     }
 
     authSubmit.disabled = true;
-    authSubmit.querySelector('span').textContent = isSignup ? 'Creating account…' : isMigration ? 'Linking number…' : 'Signing in…';
+    authSubmit.querySelector('span').textContent = isSignup ? 'Creating account…' : 'Signing in…';
     try {
       if (isSignup) {
         const { data, error } = await supabase.auth.signUp({
@@ -1673,31 +1604,10 @@ function bindAuthUI() {
         });
         if (error) throw error;
         if (!data?.user || !data?.session) {
-          throw new Error('Supabase did not create a signed-in session. In Supabase Authentication settings, enable Phone and disable phone confirmations; no SMS provider is used in this setup.');
+          throw new Error('Supabase did not create a signed-in session. Phone sign-up must be enabled and phone confirmations disabled for this PIN-only setup.');
         }
         await hydrate(data.user, { force: true });
-        toast('Your SkillSprint account is ready.');
-      } else if (isMigration) {
-        const { data, error } = await supabase.auth.signInWithPassword({ email, password: pin });
-        if (error) throw error;
-        if (!data?.session || !data?.user) throw new Error('Existing-account sign-in did not return a session.');
-
-        let phonePin = pin;
-        if (!isSixDigitPin(phonePin)) {
-          phonePin = await requestMigrationPin();
-          if (!phonePin) {
-            await hydrate(data.user, { force: true });
-            toast('You are signed in to your existing account. Telephone linking was not completed.');
-            return;
-          }
-          const { error: pinError } = await supabase.auth.updateUser({ password: phonePin });
-          if (pinError) throw pinError;
-        }
-
-        const { error: linkError } = await supabase.functions.invoke('link-phone', { body: { phone } });
-        if (linkError) throw linkError;
-        await hydrate(data.user, { force: true });
-        toast('Your telephone number is linked. Use it with your six-digit PIN from now on.');
+        toast('Your new SkillSprint account is ready.');
       } else {
         const { data, error } = await supabase.auth.signInWithPassword({ phone, password: pin });
         if (error) throw error;
@@ -1706,14 +1616,10 @@ function bindAuthUI() {
         toast('You are signed in.');
       }
     } catch (error) {
-      const rawAuthError = error?.message || String(error || '');
-      const message = isMigration && /invalid login credentials/i.test(rawAuthError)
-        ? 'The existing account email or six-digit PIN was rejected. Check that you are using the email and PIN from your last successful email sign-in. Your telephone number has not been linked yet.'
-        : friendlyError(error);
-      say(message, true);
+      say(friendlyError(error), true);
     } finally {
       authSubmit.disabled = false;
-      authSubmit.querySelector('span').textContent = isSignup ? 'Create account' : isMigration ? 'Sign in & link number' : 'Sign in';
+      authSubmit.querySelector('span').textContent = isSignup ? 'Create account' : 'Sign in';
     }
   });
 }
