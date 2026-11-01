@@ -51,8 +51,7 @@ test('browser IndexedDB can persist an offline learning queue scoped to a user',
   expect(result).toEqual({ lessonCount: 1, pathCount: 1, queued: 1, action: 'answer' });
 });
 
-test('PWA service worker installs and caches the offline learning shell', async ({ page, browserName }) => {
-  test.skip(browserName !== 'chromium', 'Service-worker offline routing is asserted in Chromium; all engines run app and IndexedDB smoke tests.');
+test('PWA service worker installs and caches the offline learning shell', async ({ page }) => {
   await page.goto('/');
   await page.evaluate(async () => {
     if (!('serviceWorker' in navigator)) throw new Error('Service workers are unavailable');
