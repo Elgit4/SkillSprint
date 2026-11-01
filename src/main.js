@@ -766,6 +766,37 @@ async function refresh() {
   updateContinueCards();
 }
 
+async function refreshUserProgress() {
+  if (!state.user?.id) throw new Error('You need to sign in again to load your learning data.');
+  const userId = state.user.id;
+  const results = await Promise.all([
+    supabase.from('profiles').select('*').eq('id', userId).single(),
+    supabase.from('user_progress').select('*').eq('user_id', userId).single(),
+    supabase.from('user_achievements').select('achievement_id,unlocked_at').eq('user_id', userId),
+    fetchAllUserRows('lesson_attempts', 'id,lesson_id,is_correct,attempted_at,duration_seconds,xp_awarded', userId, 'attempted_at').then((data) => ({ data, error: null })),
+    fetchAllUserRows('learning_events', 'id,event_type,payload,occurred_at', userId, 'occurred_at').then((data) => ({ data, error: null })),
+    supabase.from('achievements').select('*').eq('is_published', true).order('name').limit(100),
+  ]);
+  const errors = results.filter((result) => result.error);
+  if (errors.length) throw new Error(errors.map((result) => result.error.message).join(' · '));
+  const [profile, progress, earned, attempts, events, achievements] = results.map((result) => result.data);
+
+  state.profile = profile;
+  state.progress = progress;
+  state.earned = new Set((earned || []).map((row) => row.achievement_id));
+  state.attempts = attempts || [];
+  state.events = events || [];
+  state.achievements = achievements || [];
+  state.completed = new Set(state.attempts.filter((attempt) => attempt.is_correct).map((attempt) => attempt.lesson_id));
+
+  renderProfile();
+  renderStats();
+  renderPathCards();
+  renderPractice();
+  renderProgress();
+  updateContinueCards();
+}
+
 function updateContinueCards() {
   const next = getNextLesson();
   const path = next ? state.paths.find((item) => item.id === next.path_id) : null;
@@ -914,7 +945,7 @@ function openLesson(lessonId, { loop = true } = {}) {
       if (result.correct) {
         finished = true;
         let synced = true;
-        try { await refresh(); } catch (refreshError) {
+        try { await refreshUserProgress(); } catch (refreshError) {
           synced = false;
           toast(`Your answer was recorded. Progress will refresh on the next sign-in. ${friendlyError(refreshError)}`);
         }
@@ -937,7 +968,7 @@ function openLesson(lessonId, { loop = true } = {}) {
         }
         toast(xp > 0 ? `Correct answer · +${xp} XP` : 'Correct answer · continue to the next question');
       } else {
-        try { await refresh(); } catch (refreshError) { console.warn('The latest incorrect attempt could not refresh the review filter:', refreshError); }
+        try { await refreshUserProgress(); } catch (refreshError) { console.warn('The latest incorrect attempt could not refresh the review filter:', refreshError); }
         if (feedback) feedback.textContent = content.hint || 'Not quite. Review the example and try another answer.';
         submitButton.textContent = 'Try again';
         submitButton.disabled = options.length ? !selectedAnswer : !(response?.value.trim());
@@ -982,7 +1013,7 @@ async function updateProfile(patch) {
   if (!state.user?.id) throw new Error('Sign in to update your profile.');
   const { error } = await supabase.from('profiles').update(patch).eq('id', state.user.id);
   if (error) throw error;
-  await refresh();
+  await refreshUserProgress();
 }
 
 function openEditProfile() {
@@ -1140,7 +1171,7 @@ function showActivity() {
   $('#refreshActivity').addEventListener('click', async () => {
     const button = $('#refreshActivity');
     button.disabled = true; button.textContent = 'Refreshing…';
-    try { await refresh(); showActivity(); }
+    try { await refreshUserProgress(); showActivity(); }
     catch (error) { toast(friendlyError(error)); button.disabled = false; button.textContent = 'Refresh activity'; }
   });
 }
