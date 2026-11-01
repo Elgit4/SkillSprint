@@ -5,7 +5,7 @@ import { readFile, stat } from 'node:fs/promises';
 const html = await readFile(new URL('../index.html', import.meta.url), 'utf8');
 const main = await readFile(new URL('../src/main.js', import.meta.url), 'utf8');
 const manifest = JSON.parse(await readFile(new URL('../public/manifest.webmanifest', import.meta.url), 'utf8'));
-const iconSvg = await readFile(new URL('../public/icons/icon.svg', import.meta.url), 'utf8');
+const iconPng = await readFile(new URL('../public/icons/icon-192.png', import.meta.url));
 
 test('the first paint is covered by a critical spinner-only loading screen', () => {
   assert.match(html, /<html lang="en" class="ss-booting">/);
@@ -20,7 +20,7 @@ test('the first paint is covered by a critical spinner-only loading screen', () 
 
 test('PWA installation metadata, entry points and app shortcuts are provided', () => {
   assert.match(html, /rel="manifest" href="manifest\.webmanifest"/);
-  assert.match(html, /rel="icon" type="image\/svg\+xml" href="\/icons\/icon\.svg"/);
+  assert.match(html, /rel="icon" type="image\/png" sizes="192x192" href="\/icons\/icon-192\.png"/);
   assert.match(html, /id="installAppBtn"/);
   assert.match(html, /id="installAppBtnAuth"/);
   assert.match(main, /beforeinstallprompt/);
@@ -28,7 +28,7 @@ test('PWA installation metadata, entry points and app shortcuts are provided', (
   assert.equal(manifest.display, 'standalone');
   assert.ok(manifest.icons.some((icon) => icon.sizes === '192x192'));
   assert.ok(manifest.icons.some((icon) => icon.sizes === '512x512'));
-  assert.match(iconSvg, /<svg/);
+  assert.ok(iconPng.byteLength > 1000, 'The browser favicon should use the supplied SkillSprint product icon.');
 });
 
 test('offline queues and service-worker caching are disabled', () => {
