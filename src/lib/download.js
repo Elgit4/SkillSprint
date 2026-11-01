@@ -26,11 +26,12 @@ export async function downloadBlob(blob, filename, environment = globalThis) {
   const objectUrl = URLApi.createObjectURL(blob);
   const link = doc.createElement('a');
   link.href = objectUrl;
-  link.download = filename;
+  const supportsDownloadAttribute = 'download' in link;
+  if (supportsDownloadAttribute) link.download = filename;
   link.rel = 'noopener';
   link.style.display = 'none';
 
-  if ('download' in link) {
+  if (supportsDownloadAttribute) {
     doc.body.append(link);
     link.click();
     link.remove();
