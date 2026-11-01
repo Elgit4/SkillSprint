@@ -2,22 +2,16 @@
 <html lang="en" class="ss-booting">
 <head>
 <style id="ss-critical-boot">
-html.ss-booting,html.ss-booting body{min-height:100%;background:#111a36}
+html.ss-booting,html.ss-booting body{min-height:100%;background:#14234b}
 html.ss-booting body>*:not(#ssBootScreen){visibility:hidden!important}
-#ssBootScreen{position:fixed;inset:0;z-index:2147483647;display:grid;place-items:center;overflow:hidden;padding:24px;background:radial-gradient(ellipse at 50% 38%,#263b70 0%,#172447 48%,#10182f 100%);color:#fff;opacity:1;visibility:visible;transition:opacity .28s ease,visibility .28s ease;font-family:Inter,system-ui,sans-serif}
-#ssBootScreen:before,#ssBootScreen:after{content:"";position:absolute;border:1px solid rgba(190,204,255,.1);border-radius:50%;pointer-events:none}
-#ssBootScreen:before{width:min(82vw,680px);aspect-ratio:1;transform:translateY(-4%)}
-#ssBootScreen:after{width:min(62vw,500px);aspect-ratio:1;transform:translateY(-4%)}
+#ssBootScreen{position:fixed;inset:0;z-index:2147483647;display:grid;place-items:center;padding:24px;background:#14234b;color:#fff;opacity:1;visibility:visible;transition:opacity .18s ease,visibility .18s ease;font-family:Inter,system-ui,sans-serif}
 #ssBootScreen[hidden]{display:none!important}
-#ssBootScreen .ss-boot-card{position:relative;z-index:1;display:grid;justify-items:center;gap:14px;width:min(390px,100%);padding:34px 28px 30px;text-align:center;border:1px solid rgba(220,229,255,.13);border-radius:28px;background:rgba(255,255,255,.055);box-shadow:0 26px 80px rgba(3,9,25,.26);backdrop-filter:blur(14px)}
-#ssBootScreen .ss-boot-logo{display:block;width:min(250px,74vw);height:auto;max-height:82px;object-fit:contain}
-#ssBootScreen .ss-boot-caption{margin:3px 0 0;color:#d0d9f2;font-size:11px;font-weight:700;letter-spacing:.13em}
-#ssBootScreen .ss-boot-powered{margin:0;color:#9eaccd;font-size:9px;letter-spacing:.18em;font-weight:800}
-#ssBootScreen .ss-boot-powered strong{color:#e2eaff}
-#ssBootScreen .ss-boot-progress{width:min(210px,70%);height:4px;margin-top:8px;overflow:hidden;border-radius:99px;background:rgba(255,255,255,.12)}
-#ssBootScreen .ss-boot-progress span{display:block;width:38%;height:100%;border-radius:inherit;background:linear-gradient(90deg,#a4ed72,#c9f06b);animation:ss-boot-progress 1.25s ease-in-out infinite}
-@keyframes ss-boot-progress{0%{transform:translateX(-110%)}100%{transform:translateX(285%)}}
-@media(prefers-reduced-motion:reduce){#ssBootScreen .ss-boot-progress span{animation:none;width:100%}}
+#ssBootScreen .ss-boot-card{display:grid;justify-items:center;gap:22px;width:min(280px,100%);text-align:center}
+#ssBootScreen .ss-boot-logo{display:block;width:min(190px,68vw);height:auto;max-height:64px;object-fit:contain}
+#ssBootScreen .ss-boot-caption{margin:0;color:#d7deee;font-size:12px;font-weight:500;letter-spacing:.01em}
+#ssBootScreen .ss-boot-spinner{width:18px;height:18px;border:2px solid rgba(255,255,255,.22);border-top-color:#fff;border-radius:50%;animation:ss-boot-spin .75s linear infinite}
+@keyframes ss-boot-spin{to{transform:rotate(360deg)}}
+@media(prefers-reduced-motion:reduce){#ssBootScreen .ss-boot-spinner{animation:none;border-top-color:rgba(255,255,255,.22)}}
 </style>
 
 <meta charset="utf-8" />
@@ -718,9 +712,8 @@ body{background:#f6f4ef}
 <div id="ssBootScreen" role="status" aria-live="polite" aria-label="Loading SkillSprint">
   <div class="ss-boot-card">
     <img class="ss-boot-logo" src="/brand/skillsprint-wordmark-light.png" width="320" height="100" alt="SkillSprint">
-    <p class="ss-boot-caption">GETTING YOUR WORKSPACE READY</p>
-    <p class="ss-boot-powered">POWERED BY <strong>ELTECH</strong></p>
-    <div class="ss-boot-progress" aria-hidden="true"><span></span></div>
+    <p class="ss-boot-caption">Getting things ready</p>
+    <span class="ss-boot-spinner" aria-hidden="true"></span>
   </div>
 </div>
 
