@@ -15,17 +15,20 @@ test('the original first-visit welcome splash remains intact', () => {
 });
 
 test('authentication controls required by the app are present and wired', () => {
-  for (const id of ['authForm', 'authEmail', 'authUsername', 'authDisplayName', 'authPassword', 'authConfirmPassword', 'authModeToggle', 'authPasswordToggle', 'forgotPassword', 'authMessage']) {
+  for (const id of ['authForm', 'authPhone', 'authUsername', 'authDisplayName', 'authPassword', 'authConfirmPassword', 'authModeToggle', 'authPasswordToggle', 'forgotPassword', 'authMessage']) {
     assert.match(html, new RegExp(`id="${id}"`), `Missing auth control: ${id}`);
   }
-  for (const api of ['signUp', 'signInWithPassword', 'resetPasswordForEmail', 'updateUser']) {
+  for (const api of ['signUp', 'signInWithPassword', 'updateUser']) {
     assert.ok(main.includes(`.${api}(`), `Missing auth operation: ${api}`);
   }
 });
 
-test('email-only authentication is enforced in the app UI and client', () => {
-  assert.doesNotMatch(html, /googleSignIn|Continue with Google/i);
-  assert.doesNotMatch(main, /signInWithOAuth|provider:\\s*['\"]google['\"]/i);
+test('telephone-number and PIN authentication is enforced in the app UI and client', () => {
+  assert.match(html, /id=\"authPhone\"/);
+  assert.doesNotMatch(html, /id=\"authEmail\"|googleSignIn|Continue with Google/i);
+  assert.match(main, /function normalizePhone\(/);
+  assert.match(main, /function authIdentityForPhone\(/);
+  assert.doesNotMatch(main, /signInWithOAuth|resetPasswordForEmail/i);
 });
 
 test('all five application sections and important interactive tools exist', () => {
