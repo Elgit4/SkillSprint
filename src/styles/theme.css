@@ -1,3 +1,84 @@
+/* Appearance chooser base styles also apply to the preserved light theme. */
+.appearance-options {
+  display: grid;
+  gap: 9px;
+}
+
+.appearance-choice {
+  display: grid;
+  grid-template-columns: 40px minmax(0, 1fr) 20px;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  min-height: 68px;
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: 15px;
+  background: var(--white);
+  color: var(--ink);
+  text-align: left;
+  cursor: pointer;
+}
+
+.appearance-choice:hover {
+  border-color: var(--violet);
+}
+
+.appearance-choice[aria-pressed="true"] {
+  border-color: var(--violet);
+  background: #F6F8F1;
+}
+
+.appearance-icon {
+  display: grid;
+  width: 40px;
+  height: 40px;
+  place-items: center;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: #EEF1F8;
+  color: var(--violet);
+}
+
+.appearance-icon svg {
+  width: 19px;
+  height: 19px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.7;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.appearance-copy {
+  display: grid;
+  gap: 4px;
+}
+
+.appearance-copy strong {
+  color: var(--ink);
+  font-size: 12px;
+}
+
+.appearance-copy small {
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.appearance-check {
+  color: var(--violet);
+  font-size: 17px;
+  font-weight: 900;
+  opacity: 0;
+}
+
+.appearance-choice[aria-pressed="true"] .appearance-check {
+  opacity: 1;
+}
+
+/* SkillSprint Obsidian theme.
+   The light theme remains the existing default; every rule below is dark-mode-only. */
+
 /* SkillSprint Obsidian theme.
    The light theme remains the existing default; every rule in this file is dark-mode-only. */
 
