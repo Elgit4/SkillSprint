@@ -59,9 +59,11 @@ SkillSprint should feel like a **well-equipped digital workshop for learning tec
 - **Memorable signature:** One integrated code-workbench visual with a code pane and a live result pane. It should explain the product's hands-on learning character at a glance.
 - **Restraint:** The form, labels and primary action win. Brand copy is limited to one headline and one short supporting sentence.
 - **Anti-references:** Generic AI landing-page patterns, repeated slogans, floating feature cards, decorative 01/02/03 feature lists, heavy gradients, frosted-glass panels and unnecessary shadows.
-- **Token ownership/runtime mapping:** This document records the existing SkillSprint palette and font roles. Runtime values are implemented in `src/styles/auth.css` and the global CSS in `index.html`; the root CSS variables in `index.html` remain canonical for shared app colors.
+- **Token ownership/runtime mapping:** The existing light appearance remains the baseline. Its runtime values stay in `index.html` and the existing component styles. Dark semantic tokens and component treatments are defined in `src/styles/theme.css`; preference resolution and persistence live in `src/lib/theme.js`.
 
-## Colors
+## Light appearance colors
+
+This is the retained light-mode palette. The Obsidian dark appearance is documented separately below and does not change these light-mode values.
 
 - **Primary navy — `#14234B`:** Brand canvas and primary action. Use for strong structural contrast, not for every element.
 - **Lime — `#C9F06B`:** A restrained signal for progress and the code-workbench detail. Never use it as a large background on the login form.
@@ -124,6 +126,66 @@ Use only restrained hover/focus transitions. Avoid ambient animation or motion t
 ### Content and data visualization
 
 Use concrete learner-facing language: learn, practice, build, continue. Avoid repetitive marketing slogans, internal technical vocabulary and decorative labels that do not help a learner understand the page.
+
+## Dark appearance — Obsidian
+
+### Visual direction
+
+The dark theme is a black-first, calm, focused learning workspace. Use **Obsidian black + charcoal + lime** rather than a flat black page with bright controls. The surfaces should form a measured tonal ladder: the page is darkest, cards are lifted slightly, and nested panels are clearer without relying on heavy shadows.
+
+### Dark semantic palette
+
+| Role | Value | Use |
+|---|---|---|
+| Canvas | `#080B0F` | Application background |
+| Primary surface | `#141A22` | Cards, forms and panels |
+| Raised surface | `#1D2631` | Nested panels, modal sections and controls |
+| Tertiary surface | `#243449` | Selected neutral containers and code-workspace chrome |
+| Border | `#303945` | Card and field boundaries |
+| Primary text | `#F5F7FA` | Headings and important content |
+| Secondary text | `#A6B0BD` | Descriptions and supporting copy |
+| Muted text | `#8E9AAA` | Metadata and secondary labels |
+| Primary accent | `#C9F06B` | Primary actions, progress and selected state |
+| Secondary accent | `#78C8E8` | Focus and technical secondary information |
+| Warning | `#E9A45B` | Warnings and relevant learning indicators |
+| Success | `#B8E58B` | Correct and completed states |
+| Error | `#FF9AA8` | Incorrect answers and errors |
+
+### Dark-mode colour rule
+
+No purple, violet, lavender or indigo hue may be rendered anywhere in dark mode. This includes primary/secondary accents, selected states, progress fills, gradients, focus treatments, shadows, achievements, icons and Mission Map styling. Existing legacy CSS selectors that reference `--violet` must resolve to the lime accent when `data-theme="dark"` is active. Do not add new purple-family dark tokens.
+
+This is a dark-mode-only rule. The retained light appearance and its existing accent colours are not redesigned by this work.
+
+### Appearance preference
+
+- Initial preference: **System**.
+- Supported choices: **System**, **Light**, **Dark**.
+- System follows `prefers-color-scheme` and updates when the operating system changes.
+- Light and Dark are manual overrides and remain selected when the operating system appearance changes.
+- Preference key: `skillsprint:theme:v1`; persistence is local to the device.
+- Profile preferences and Account settings both expose the Appearance selector.
+- The saved/system selection is resolved before first paint to avoid theme flash.
+- Open tabs synchronise preference changes.
+
+### Component treatment
+
+- Home, Explore, Practice, Progress and Profile use the same semantic surface, text and border roles.
+- Practice answer states use explicit green/red-tinted surfaces, icons and explanatory feedback; colour is not the only signal.
+- Progress and achievements remain restrained. Lime represents meaningful progress, not decoration on every component.
+- The navigation dock uses charcoal with a quiet lime selected state.
+- The Mission Map is converted to the same black/charcoal/lime palette; completed, current and upcoming milestones remain distinct.
+- Authentication keeps its current telephone-number + six-digit PIN flow and changes only its visual theme.
+- The Code Playground shell, toolbar, editor framing, preview chrome and console follow the active theme. The learner-authored preview iframe is independent and must not be forced into dark mode.
+- Modals, welcome dialog, settings, toasts, form fields, disabled states and focus indicators must be themed as part of the product, not left as light surfaces.
+
+### Runtime and accessibility
+
+- `src/styles/theme.css` owns dark semantic overrides and component-specific dark treatments.
+- `src/lib/theme.js` owns preference normalisation, resolution, persistence, system listening and cross-tab synchronisation.
+- `index.html` performs pre-paint resolution; `theme-color` follows the resolved appearance.
+- The PWA manifest uses Obsidian as its static launch/splash fallback.
+- Target WCAG 2.2 AA contrast for text and non-text UI, retain visible focus, and respect reduced motion, responsive layouts and mobile safe areas.
 
 ## Do's and Don'ts
 
