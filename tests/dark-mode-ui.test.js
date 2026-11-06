@@ -15,7 +15,7 @@ test('resolves saved or system appearance before the application first paints', 
   assert.match(html, /id="ss-theme-bootstrap"/);
   assert.match(html, /skillsprint:theme:v1/);
   assert.match(html, /prefers-color-scheme:\s*dark/);
-  assert.match(html, /data-theme-preference/);
+  assert.match(html, /themePreference/);
   assert.match(html, /meta name="color-scheme" content="light dark"/);
 });
 
