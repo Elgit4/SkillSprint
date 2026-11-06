@@ -49,6 +49,25 @@ test('uses the Obsidian palette and remaps legacy violet styling to lime in dark
   }
 });
 
+test('overrides legacy hero, level, activity, mission-map and lesson surfaces without purple accents', () => {
+  for (const selector of [
+    '.hero {',
+    '.hero-stage::before {',
+    '.level-emblem {',
+    '.mission-banner {',
+    '.lesson-response,',
+    '.code-sample {',
+    '.activity-mark {',
+    '.avatar-choice.selected {',
+    '.mission-map-node.current {',
+    '.studio-tab.active::after {',
+  ]) {
+    assert.ok(themeCss.includes(selector), 'Missing dark-mode override: ' + selector);
+  }
+  assert.match(themeCss, /--violet:\s*#C9F06B/i);
+  assert.match(themeCss, /\.continue-card \.eyebrow[\s\S]*?color:\s*#C9F06B\s*!important/i);
+});
+
 test('keeps the learner-authored playground preview white while theming its surrounding workspace', () => {
   assert.match(themeCss, /\.studio-preview-panel/);
   assert.match(themeCss, /\.studio-toolbar/);
