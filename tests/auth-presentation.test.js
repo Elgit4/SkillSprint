@@ -12,10 +12,10 @@ test('the auth showcase has one clear promise and one integrated learning visual
   assert.ok(start >= 0 && end > start, 'Expected the authentication showcase region');
   const showcase = html.slice(start, end);
 
-  assert.equal((showcase.match(/<h1\\b/g) || []).length, 1, 'The showcase should have one primary headline');
+  assert.equal((showcase.match(/<h1\b/g) || []).length, 1, 'The showcase should have one primary headline');
   assert.match(showcase, /id="authShowcaseTitle"/);
   assert.match(showcase, /class="auth-workbench"/);
-  assert.match(showcase, /Turn curiosity into <em>real skills\\.<\\/em>/);
+  assert.match(showcase, /Turn curiosity into <em>real skills\.<\/em>/);
   assert.doesNotMatch(showcase, /TECH SKILLS, BUILT BY DOING|YOUR NEXT MOVE STARTS HERE|auth-float-card|auth-showcase-bottom|auth-feature/);
 });
 
@@ -35,8 +35,8 @@ test('mobile account branding sits outside the form card and the auth fields rem
 });
 
 test('the composed authentication layout has explicit desktop, mobile and accessible focus treatment', () => {
-  assert.match(css, /#authGate\\s+\\.auth-workbench/);
-  assert.match(css, /@media\\s*\\(max-width:\\s*900px\\)/);
-  assert.match(css, /#authGate\\s+\\.auth-submit:focus-visible/);
-  assert.match(css, /prefers-reduced-motion:\\s*reduce/);
+  assert.match(css, /#authGate\s+\.auth-workbench/);
+  assert.match(css, /@media\s*\(max-width:\s*900px\)/);
+  assert.match(css, /#authGate\s+\.auth-submit:focus-visible/);
+  assert.match(css, /prefers-reduced-motion:\s*reduce/);
 });
