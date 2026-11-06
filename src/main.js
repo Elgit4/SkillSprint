@@ -1878,6 +1878,10 @@ function bindAuthUI() {
   });
   authForm?.addEventListener('submit', async (event) => {
     event.preventDefault();
+    if (!isSupabaseConfigured || !supabase) {
+      say('Account access is unavailable until the Supabase project URL and publishable key are configured.', true);
+      return;
+    }
     if (authSubmit.disabled) return;
     const isSignup = authMode === 'signup';
     const phone = (() => {
@@ -1938,13 +1942,14 @@ function bindAuthUI() {
 }
 
 async function initializeAuth() {
+  // Keep the account form responsive even when backend configuration is missing.
+  bindAuthUI();
+  syncAuthMode();
   if (!isSupabaseConfigured || !supabase) {
     lock();
     say('Supabase is not configured. Add your project URL and publishable key to .env.local.', true);
     return;
   }
-  bindAuthUI();
-  syncAuthMode();
 
   const rolloutKey = 'skillsprint:sign-in-rollout:v2';
   let rolloutDone = false;
