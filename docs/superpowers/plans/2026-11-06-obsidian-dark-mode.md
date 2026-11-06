@@ -58,10 +58,10 @@
 - Account settings row: `data-setting="appearance"`.
 - Option buttons: `data-theme-preference="system|light|dark"`, with `aria-pressed`.
 
-- [ ] Add the pre-paint script and `color-scheme: light dark` declaration.
-- [ ] Add an Appearance entry in Profile preferences and Account settings.
-- [ ] Add immediate selection, local persistence, visible selected state and a current preference summary.
-- [ ] Confirm authentication IDs, input flow and sign-in/signup switching are unchanged.
+- [x] Add the pre-paint script and `color-scheme: light dark` declaration.
+- [x] Add an Appearance entry in Profile preferences and Account settings.
+- [x] Add immediate selection, local persistence, visible selected state and a current preference summary.
+- [x] Confirm authentication IDs, input flow and sign-in/signup switching are unchanged.
 
 ### Task 3: Obsidian component and screen styling
 
@@ -69,12 +69,12 @@
 - Create: `src/styles/theme.css`
 - Modify: `src/main.js` (stylesheet import)
 
-- [ ] Add dark semantic tokens and component overrides for all five main pages.
+- [x] Add dark semantic tokens and component overrides for all five main pages.
 - [ ] Adapt navigation, cards, forms, answer states, modals, toast, profile, settings and achievements.
-- [ ] Adapt the full Mission Map to black/charcoal/lime; remove all purple-family styling from dark mode.
-- [ ] Adapt authentication surfaces and the existing telephone/PIN controls.
-- [ ] Adapt Playground chrome and leave the learner-authored iframe preview independent.
-- [ ] Preserve responsive and reduced-motion behaviour.
+- [x] Adapt the full Mission Map to black/charcoal/lime; remove all purple-family styling from dark mode.
+- [x] Adapt authentication surfaces and the existing telephone/PIN controls.
+- [x] Adapt Playground chrome and leave the learner-authored iframe preview independent.
+- [x] Preserve responsive and reduced-motion behaviour.
 
 ### Task 4: PWA, design documentation and regression tests
 
@@ -83,8 +83,8 @@
 - Modify: `DESIGN.md`
 - Create: `tests/dark-mode-ui.test.js`
 
-- [ ] Set Obsidian as the static PWA `theme_color` and `background_color` fallback; update the runtime meta value with the resolved preference.
-- [ ] Document the Obsidian palette, appearance preference contract and no-purple rule in `DESIGN.md`.
+- [x] Set Obsidian as the static PWA `theme_color` and `background_color` fallback; update the runtime meta value with the resolved preference.
+- [x] Document the Obsidian palette, appearance preference contract and no-purple rule in `DESIGN.md`.
 - [ ] Add integration assertions for pre-paint resolution, settings entry points, theme import, no purple-family tokens and untouched learner preview.
 - [ ] Verify all tests, `npm run check`, production build and the existing Playwright browser/PWA suite.
 
