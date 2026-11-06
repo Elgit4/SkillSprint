@@ -1612,3 +1612,154 @@ button[disabled],.btn[disabled]{cursor:not-allowed;opacity:.58}
     margin-top: 18px;
   }
 }
+
+
+/* -------------------------------------------------------------------------
+   Authentication refinement — calmer desktop form, clearer hierarchy.
+   Keep the mobile keyboard/scroll safeguards immediately above intact.
+   ------------------------------------------------------------------------- */
+@media (min-width: 901px) {
+  #authGate .auth-layout {
+    grid-template-columns: minmax(0, 1.04fr) minmax(440px, .96fr);
+  }
+  #authGate .auth-showcase {
+    padding: 34px clamp(34px, 4.6vw, 72px) 30px;
+  }
+  #authGate .auth-showcase-copy {
+    max-width: 560px;
+    margin-top: clamp(46px, 7vh, 78px);
+  }
+  #authGate .auth-showcase-copy h1 {
+    max-width: 540px;
+    font-size: clamp(46px, 4.7vw, 68px);
+    line-height: 1.04;
+  }
+  #authGate .auth-showcase-description {
+    max-width: 390px;
+    margin-top: 16px;
+    font-size: 13px;
+    line-height: 1.7;
+  }
+  #authGate .auth-workbench {
+    width: min(100%, 610px);
+    margin-bottom: 8px;
+    border-radius: 16px;
+  }
+  #authGate .auth-workspace {
+    padding: 36px clamp(28px, 4vw, 60px) 20px;
+    background: #f7f5f0;
+  }
+  #authGate .auth-form-wrap {
+    width: min(100%, 448px);
+    max-width: 448px;
+    padding: 34px 34px 28px;
+    border: 1px solid #e9e5dd;
+    border-radius: 18px;
+    background: #fffefa;
+    box-shadow: 0 14px 38px rgba(33, 29, 43, .055);
+  }
+  #authGate .auth-form-heading {
+    margin-bottom: 26px;
+  }
+  #authGate .auth-form-heading h2 {
+    font-size: clamp(31px, 2.8vw, 37px);
+    line-height: 1.08;
+  }
+  #authGate .auth-form-heading p {
+    max-width: 34ch;
+    font-size: 13px;
+    line-height: 1.6;
+  }
+  #authGate .auth-form {
+    gap: 15px;
+  }
+  #authGate .auth-input-wrap {
+    height: 52px;
+    min-height: 52px;
+    border-radius: 10px;
+  }
+  #authGate .auth-submit {
+    height: 52px;
+    min-height: 52px;
+    border-radius: 10px;
+  }
+  #authGate .auth-switch {
+    margin-top: 17px;
+  }
+  #authGate .auth-privacy {
+    margin-top: 13px;
+    font-size: 10px;
+  }
+  #authGate .auth-workspace-footer {
+    width: min(100%, 448px);
+  }
+}
+@media (min-width: 901px) and (max-width: 1120px) {
+  #authGate .auth-layout {
+    grid-template-columns: minmax(0, 1fr) minmax(420px, .96fr);
+  }
+  #authGate .auth-showcase {
+    padding-right: 30px;
+    padding-left: 34px;
+  }
+  #authGate .auth-workbench-grid {
+    grid-template-columns: minmax(0, 1fr) minmax(150px, .8fr);
+  }
+  #authGate .auth-workbench-code {
+    padding: 18px 12px;
+  }
+  #authGate .auth-workbench-line {
+    gap: 6px;
+    font-size: 9px;
+  }
+  #authGate .auth-workspace {
+    padding-right: 24px;
+    padding-left: 24px;
+  }
+  #authGate .auth-form-wrap {
+    padding-right: 26px;
+    padding-left: 26px;
+  }
+}
+@media (max-height: 760px) and (min-width: 901px) {
+  #authGate .auth-showcase {
+    padding-top: 22px;
+    padding-bottom: 18px;
+  }
+  #authGate .auth-showcase-copy {
+    margin-top: 28px;
+  }
+  #authGate .auth-workbench {
+    margin-top: 20px;
+  }
+  #authGate .auth-form-wrap {
+    padding-top: 25px;
+    padding-bottom: 22px;
+  }
+  #authGate .auth-form-heading {
+    margin-bottom: 19px;
+  }
+  #authGate .auth-form {
+    gap: 12px;
+  }
+}
+@media (max-width: 900px) {
+  #authGate .auth-workspace {
+    background: #f7f5f0;
+  }
+  #authGate .auth-form-wrap {
+    border-color: #e8e4dc;
+    box-shadow: 0 12px 30px rgba(33, 29, 43, .045);
+  }
+  #authGate .auth-form-heading p {
+    max-width: 38ch;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  #authGate .auth-form-wrap,
+  #authGate .auth-input-wrap,
+  #authGate .auth-submit,
+  #authGate .auth-submit svg {
+    transition: none !important;
+  }
+}
