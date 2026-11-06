@@ -29,7 +29,7 @@ test('exposes the appearance setting from Profile and Account settings', () => {
 
 test('loads the shared theme system without changing authentication behaviour', () => {
   assert.match(main, /import '\.\/styles\/theme\.css'/);
-  assert.match(main, /createThemeController/);
+  assert.match(html, /html\\[data-theme=\\\"dark\\\"\\] #ssBootScreen/);\n  assert.match(main, /createThemeController/);
   for (const id of ['authForm', 'authPhone', 'authPassword', 'authConfirmPassword', 'authModeToggle', 'forgotPassword']) {
     assert.match(html, new RegExp('id="' + id + '"'));
   }
