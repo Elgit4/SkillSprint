@@ -1,4 +1,5 @@
 import './styles/auth.css';
+import './styles/playground.css';
 import { downloadBlob } from './lib/download.js';
 import { supabase, isSupabaseConfigured } from './lib/supabase.js';
 import { completedLessonIds, mergeLessonIds, createSerialQueue } from './lib/progress-state.js';
@@ -245,6 +246,8 @@ function nav(page, { updateHash = true } = {}) {
 function openModal(html, eyebrow = 'SkillSprint') {
   const backdrop = $('#modalBackdrop');
   if (!backdrop) return;
+  $('#modalBackdrop')?.classList.remove('playground-open');
+  $('#modal')?.classList.remove('modal--playground');
   $('#modalContent').innerHTML = html;
   $('#modalEyebrow').textContent = eyebrow;
   backdrop.classList.add('open');
@@ -257,7 +260,9 @@ function closeModal() {
   if (playgroundMessageHandler) { window.removeEventListener('message', playgroundMessageHandler); playgroundMessageHandler = null; }
   if ($('#passwordResetForm')) passwordResetOpen = false;
   const backdrop = $('#modalBackdrop');
-  backdrop?.classList.remove('open');
+  backdrop?.classList.remove('open', 'playground-open');
+  $('#modal')?.classList.remove('modal--playground');
+  $('#playPreview')?.removeAttribute('srcdoc');
   backdrop?.setAttribute('aria-hidden', 'true');
   document.body.classList.remove('modal-open');
 }
@@ -1383,22 +1388,26 @@ function openPlayground() {
   let activeLanguage = 'html';
   const languageLabels = { html: 'HTML', css: 'CSS', js: 'JavaScript' };
   openModal(`<div class="playground-studio" id="playgroundStudio">
-    <header class="studio-header"><div class="studio-heading"><span class="studio-eyebrow">SKILLSPRINT · BUILD LAB</span><h2 id="modalTitle">Code playground</h2><p>Write, run and test front-end ideas in a private preview.</p></div><div class="studio-shortcuts"><span><kbd>Ctrl</kbd> + <kbd>Enter</kbd> Run</span><span><kbd>Tab</kbd> Indent</span></div></header>
-    <div class="studio-toolbar"><div class="studio-toolbar-main"><button class="btn btn-primary" type="button" id="runPlayground"><span aria-hidden="true">▶</span> Run</button><button class="btn btn-light" type="button" id="savePlayground">Save draft</button><button class="btn btn-light" type="button" id="copyPlayground">Copy code</button><button class="btn btn-light studio-download-button" type="button" id="exportPlayground" title="Download a standalone HTML copy"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v11m0 0 4-4m-4 4-4-4M4 17v3h16v-3"/></svg> Download HTML</button></div><button class="btn btn-quiet" type="button" id="resetPlayground">Reset</button></div>
+    <header class="studio-header"><div class="studio-heading"><span class="studio-eyebrow">SKILLSPRINT / BUILD LAB</span><h2 id="modalTitle">Code playground</h2><p>Build with HTML, CSS and JavaScript, then test your work in an isolated preview.</p></div><div class="studio-shortcuts"><span><kbd>Ctrl</kbd> + <kbd>Enter</kbd> Run</span><span><kbd>Tab</kbd> Indent</span></div></header>
+    <div class="studio-toolbar"><div class="studio-toolbar-main"><button class="btn btn-primary" type="button" id="runPlayground"><span aria-hidden="true">▶</span> Run</button><button class="btn btn-light" type="button" id="savePlayground">Save draft</button><button class="btn btn-light" type="button" id="copyPlayground">Copy code</button><button class="btn btn-light studio-download-button" type="button" id="exportPlayground" title="Download a standalone HTML copy"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v11m0 0 4-4m-4 4-4-4M4 17v3h16v-3"/></svg> Download HTML</button></div><button class="btn btn-light" type="button" id="resetPlayground">Reset</button></div>
     <div class="studio-main">
       <section class="studio-editor-panel" aria-label="Code editor">
         <div class="studio-panel-head"><div class="studio-tablist" role="tablist" aria-label="Editor language"><button class="studio-tab active" type="button" role="tab" id="studioTabHtml" aria-selected="true" data-editor-tab="html">HTML</button><button class="studio-tab" type="button" role="tab" id="studioTabCss" aria-selected="false" data-editor-tab="css">CSS</button><button class="studio-tab" type="button" role="tab" id="studioTabJs" aria-selected="false" data-editor-tab="js">JS</button></div><span class="studio-editor-file" id="studioEditorFile">index.html</span></div>
         <div class="studio-editor-wrap"><div class="studio-gutter" id="studioGutter" aria-hidden="true">1</div><textarea id="studioCode" aria-label="HTML code editor" autocomplete="off" autocapitalize="off" spellcheck="false" wrap="off"></textarea></div>
         <div class="studio-editor-foot"><span>Vanilla HTML · CSS · JavaScript</span><span id="studioLineCount">1 line</span></div>
       </section>
-      <section class="studio-preview-panel" aria-label="Live preview"><div class="studio-panel-head studio-preview-head"><div class="studio-preview-title"><span class="studio-live-dot"></span><strong>Preview</strong><small id="studioPreviewState">Ready to run</small></div><div class="studio-viewports" role="group" aria-label="Preview size"><button type="button" class="active" data-viewport="desktop" aria-pressed="true" title="Desktop preview">Desktop</button><button type="button" data-viewport="tablet" aria-pressed="false" title="Tablet preview">Tablet</button><button type="button" data-viewport="mobile" aria-pressed="false" title="Mobile preview">Mobile</button></div></div><div class="studio-preview-stage" id="studioPreviewStage"><iframe id="playPreview" title="Isolated code preview" sandbox="allow-scripts"></iframe></div><div class="studio-console"><div class="studio-console-head"><strong>Console</strong><button type="button" id="clearPlaygroundConsole">Clear</button><span id="studioConsoleCount">0 messages</span></div><div class="studio-console-output" id="studioConsoleOutput" role="log" aria-live="polite"><p class="studio-console-empty">Console output will appear here when you run your code.</p></div></div></section>
+      <section class="studio-preview-panel" id="studioPreviewPanel" aria-label="Live preview"><div class="studio-panel-head studio-preview-head"><div class="studio-preview-title"><span class="studio-live-dot"></span><strong>Preview</strong><small id="studioPreviewState">Ready to run</small></div><div class="studio-viewports" role="group" aria-label="Preview size"><button type="button" class="active" data-viewport="desktop" aria-pressed="true" title="Desktop preview">Desktop</button><button type="button" data-viewport="tablet" aria-pressed="false" title="Tablet preview">Tablet</button><button type="button" data-viewport="mobile" aria-pressed="false" title="Mobile preview">Mobile</button></div><button class="studio-expand-preview" type="button" id="studioExpandPreview" aria-label="Expand preview" title="Expand preview" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 3H3v5M16 3h5v5M21 16v5h-5M3 16v5h5"/></svg></button></div><div class="studio-preview-stage" id="studioPreviewStage" data-viewport="desktop"><iframe id="playPreview" title="Isolated code preview" sandbox="allow-scripts"></iframe></div><div class="studio-console"><div class="studio-console-head"><div class="studio-console-heading"><strong>Console</strong><span id="studioConsoleCount">0 messages</span></div><div class="studio-console-actions"><button type="button" id="togglePlaygroundConsole" aria-expanded="true">Collapse</button><button type="button" id="clearPlaygroundConsole">Clear</button></div></div><div class="studio-console-output" id="studioConsoleOutput" role="log" aria-live="polite"><p class="studio-console-empty">Console output will appear here when you run your code.</p></div></div></section>
     </div><footer class="studio-status"><span id="playgroundStatus">Drafts are stored locally in this browser.</span><span class="studio-security-note">Preview isolated from your SkillSprint account</span></footer>
-  </div>`, 'Build and experiment');
+  </div>`, 'SkillSprint · Build Lab');
+  $('#modalBackdrop')?.classList.add('playground-open');
+  $('#modal')?.classList.add('modal--playground');
 
   const editor = $('#studioCode');
   const gutter = $('#studioGutter');
   const output = $('#studioConsoleOutput');
   const preview = $('#playPreview');
+  const previewPanel = $('#studioPreviewPanel');
+  const studio = $('#playgroundStudio');
   const status = $('#playgroundStatus');
   const currentCode = () => { code[activeLanguage] = editor.value; return code; };
   const setTab = (language) => {
@@ -1442,11 +1451,17 @@ function openPlayground() {
   };
   window.addEventListener('message', playgroundMessageHandler);
   $$('[data-editor-tab]').forEach((button) => button.addEventListener('click', () => setTab(button.dataset.editorTab)));
-  editor.addEventListener('input', updateGutter);
+  editor.addEventListener('input', () => {
+    updateGutter();
+    status.textContent = 'Unsaved edits · Save draft to keep a local copy.';
+  });
+  preview.addEventListener('load', () => {
+    $('#studioPreviewState').textContent = 'Preview ready';
+  });
   editor.addEventListener('scroll', () => { gutter.scrollTop=editor.scrollTop; });
   editor.addEventListener('keydown', (event) => {
     if ((event.ctrlKey || event.metaKey) && event.key === 'Enter') { event.preventDefault(); run(); }
-    if (event.key === 'Tab') { event.preventDefault(); const start=editor.selectionStart,end=editor.selectionEnd; editor.setRangeText('  ',start,end,'end'); updateGutter(); }
+    if (event.key === 'Tab') { event.preventDefault(); const start=editor.selectionStart,end=editor.selectionEnd; editor.setRangeText('  ',start,end,'end'); updateGutter(); status.textContent='Unsaved edits · Save draft to keep a local copy.'; }
   });
   $('#runPlayground').addEventListener('click', run);
   $('#savePlayground').addEventListener('click', () => {
@@ -1490,9 +1505,20 @@ function openPlayground() {
     Object.assign(code,playgroundDefaults);setTab(activeLanguage);run();status.textContent='Starter example restored.';
   });
   $('#clearPlaygroundConsole').addEventListener('click', () => { output.innerHTML='<p class="studio-console-empty">Console cleared.</p>';$('#studioConsoleCount').textContent='0 messages'; });
-  $$('[data-viewport]').forEach((button)=>button.addEventListener('click',()=>{
+  $('#togglePlaygroundConsole').addEventListener('click', (event) => {
+    const collapsed = previewPanel.classList.toggle('console-collapsed');
+    event.currentTarget.setAttribute('aria-expanded', String(!collapsed));
+    event.currentTarget.textContent = collapsed ? 'Show' : 'Collapse';
+  });
+  $('#studioExpandPreview').addEventListener('click', (event) => {
+    const expanded = studio.classList.toggle('preview-expanded');
+    event.currentTarget.setAttribute('aria-pressed', String(expanded));
+    event.currentTarget.setAttribute('aria-label', expanded ? 'Restore editor layout' : 'Expand preview');
+    event.currentTarget.title = expanded ? 'Restore editor layout' : 'Expand preview';
+  });
+  $('.studio-viewports [data-viewport]').forEach((button)=>button.addEventListener('click',()=>{
     const viewport=button.dataset.viewport;
-    $$('[data-viewport]').forEach((item)=>{const active=item===button;item.classList.toggle('active',active);item.setAttribute('aria-pressed',String(active));});
+    $('.studio-viewports [data-viewport]').forEach((item)=>{const active=item===button;item.classList.toggle('active',active);item.setAttribute('aria-pressed',String(active));});
     $('#studioPreviewStage').dataset.viewport=viewport;
   }));
   setTab('html');run();
