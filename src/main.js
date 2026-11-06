@@ -1389,7 +1389,7 @@ function openPlayground() {
   const languageLabels = { html: 'HTML', css: 'CSS', js: 'JavaScript' };
   openModal(`<div class="playground-studio" id="playgroundStudio">
     <header class="studio-header"><div class="studio-heading"><span class="studio-eyebrow">SKILLSPRINT / BUILD LAB</span><h2 id="modalTitle">Code playground</h2><p>Build with HTML, CSS and JavaScript, then test your work in an isolated preview.</p></div><div class="studio-shortcuts"><span><kbd>Ctrl</kbd> + <kbd>Enter</kbd> Run</span><span><kbd>Tab</kbd> Indent</span></div></header>
-    <div class="studio-toolbar"><div class="studio-toolbar-main"><button class="btn btn-primary" type="button" id="runPlayground"><span aria-hidden="true">▶</span> Run</button><button class="btn btn-light" type="button" id="savePlayground">Save draft</button><button class="btn btn-light" type="button" id="copyPlayground">Copy code</button><button class="btn btn-light studio-download-button" type="button" id="exportPlayground" title="Download a standalone HTML copy"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v11m0 0 4-4m-4 4-4-4M4 17v3h16v-3"/></svg> Download HTML</button></div><button class="btn btn-quiet" type="button" id="resetPlayground">Reset</button></div>
+    <div class="studio-toolbar"><div class="studio-toolbar-main"><button class="btn btn-primary" type="button" id="runPlayground"><span aria-hidden="true">▶</span> Run</button><button class="btn btn-light" type="button" id="savePlayground">Save draft</button><button class="btn btn-light" type="button" id="copyPlayground">Copy code</button><button class="btn btn-light studio-download-button" type="button" id="exportPlayground" title="Download a standalone HTML copy"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v11m0 0 4-4m-4 4-4-4M4 17v3h16v-3"/></svg> Download HTML</button></div><button class="btn btn-light" type="button" id="resetPlayground">Reset</button></div>
     <div class="studio-main">
       <section class="studio-editor-panel" aria-label="Code editor">
         <div class="studio-panel-head"><div class="studio-tablist" role="tablist" aria-label="Editor language"><button class="studio-tab active" type="button" role="tab" id="studioTabHtml" aria-selected="true" data-editor-tab="html">HTML</button><button class="studio-tab" type="button" role="tab" id="studioTabCss" aria-selected="false" data-editor-tab="css">CSS</button><button class="studio-tab" type="button" role="tab" id="studioTabJs" aria-selected="false" data-editor-tab="js">JS</button></div><span class="studio-editor-file" id="studioEditorFile">index.html</span></div>
@@ -1461,7 +1461,7 @@ function openPlayground() {
   editor.addEventListener('scroll', () => { gutter.scrollTop=editor.scrollTop; });
   editor.addEventListener('keydown', (event) => {
     if ((event.ctrlKey || event.metaKey) && event.key === 'Enter') { event.preventDefault(); run(); }
-    if (event.key === 'Tab') { event.preventDefault(); const start=editor.selectionStart,end=editor.selectionEnd; editor.setRangeText('  ',start,end,'end'); updateGutter(); }
+    if (event.key === 'Tab') { event.preventDefault(); const start=editor.selectionStart,end=editor.selectionEnd; editor.setRangeText('  ',start,end,'end'); updateGutter(); status.textContent='Unsaved edits · Save draft to keep a local copy.'; }
   });
   $('#runPlayground').addEventListener('click', run);
   $('#savePlayground').addEventListener('click', () => {
@@ -1516,9 +1516,9 @@ function openPlayground() {
     event.currentTarget.setAttribute('aria-label', expanded ? 'Restore editor layout' : 'Expand preview');
     event.currentTarget.title = expanded ? 'Restore editor layout' : 'Expand preview';
   });
-  $$('[data-viewport]').forEach((button)=>button.addEventListener('click',()=>{
+  $('.studio-viewports [data-viewport]').forEach((button)=>button.addEventListener('click',()=>{
     const viewport=button.dataset.viewport;
-    $$('[data-viewport]').forEach((item)=>{const active=item===button;item.classList.toggle('active',active);item.setAttribute('aria-pressed',String(active));});
+    $('.studio-viewports [data-viewport]').forEach((item)=>{const active=item===button;item.classList.toggle('active',active);item.setAttribute('aria-pressed',String(active));});
     $('#studioPreviewStage').dataset.viewport=viewport;
   }));
   setTab('html');run();
