@@ -19,7 +19,7 @@ function makeEnvironment({ preference = null, systemDark = false } = {}) {
     setAttribute(name, value) { this.attributes[name] = value; },
   };
   const meta = {
-    attributes: { content: '#F4F6FF' },
+    attributes: { content: '#14234B' },
     setAttribute(name, value) { this.attributes[name] = value; },
   };
   const documentRef = {
