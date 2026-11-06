@@ -13,7 +13,7 @@ html.ss-booting body>*:not(#ssBootScreen),html.ss-loading body>*:not(#ssBootScre
 
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-<meta name="theme-color" content="#F4F6FF" />
+<meta name="theme-color" content="#14234b" />
 <script id="ss-theme-bootstrap">
 (() => {
   let preference = 'system';
@@ -29,11 +29,14 @@ html.ss-booting body>*:not(#ssBootScreen),html.ss-loading body>*:not(#ssBootScre
   root.dataset.themePreference = preference;
   root.style.colorScheme = resolved;
   const themeColor = document.querySelector('meta[name="theme-color"]');
-  if (themeColor) themeColor.content = resolved === 'dark' ? '#080B0F' : '#F4F6FF';
+  if (themeColor) themeColor.content = resolved === 'dark' ? '#080B0F' : '#14234b';
 })();
 </script>
 <style id="ss-theme-first-paint">
 html[data-theme="dark"],html[data-theme="dark"] body{background:#080B0F;color:#F5F7FA}
+html[data-theme="dark"].ss-booting,html[data-theme="dark"].ss-loading,html[data-theme="dark"].ss-booting body,html[data-theme="dark"].ss-loading body{background:#080B0F!important}
+html[data-theme="dark"] #ssBootScreen{background:#080B0F;color:#F5F7FA}
+html[data-theme="dark"] #ssBootScreen .ss-boot-spinner{border-color:rgba(245,247,250,.22);border-top-color:#C9F06B}
 </style>
 <meta name="description" content="Build technology skills through practical lessons, focused practice and a learning path that tracks your progress." />
 <meta property="og:type" content="website" />
