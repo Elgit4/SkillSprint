@@ -41,6 +41,7 @@ test('uses the Obsidian palette and remaps legacy violet styling to lime in dark
   assert.match(themeCss, /--surface-2:\s*#1D2631/i);
   assert.match(themeCss, /--violet:\s*#C9F06B/i);
   assert.match(themeCss, /--accent-cyan:\s*#78C8E8/i);
+  assert.match(themeCss, /--border-control:\s*#64758B/i);
   for (const colour of [
     '#7057E8', '#6657EF', '#D8D5FF', '#B8ADFF', '#7060E9',
     '#EFEDFF', '#6652CE', '#7565F4', '#796AFF', '#5B4BE4',
