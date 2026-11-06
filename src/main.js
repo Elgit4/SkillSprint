@@ -1769,6 +1769,12 @@ async function hydrate(user, { force = false } = {}) {
   }
 }
 
+function showAuthFieldError(field, message) {
+  if (field) field.setAttribute('aria-invalid', 'true');
+  say(message, true);
+  field?.focus();
+}
+
 function syncAuthMode() {
   const isSignup = authMode === 'signup';
   $('#authUsernameGroup').hidden = !isSignup;
@@ -1788,6 +1794,11 @@ function syncAuthMode() {
   authPassword.minLength = 6;
   authPassword.pattern = '[0-9]{6}';
   $('label[for="authPassword"]').textContent = 'Six-digit PIN';
+  authPassword.value = '';
+  authPassword.type = 'password';
+  $('#authPasswordToggle')?.setAttribute('aria-pressed', 'false');
+  $('#authPasswordToggle')?.setAttribute('aria-label', 'Show PIN');
+  authForm?.querySelectorAll('input[aria-invalid="true"]').forEach((field) => field.removeAttribute('aria-invalid'));
   authConfirmPassword.value = '';
   authConfirmPassword.placeholder = 'Enter the PIN again';
   authConfirmPassword.inputMode = 'numeric';
@@ -1855,36 +1866,40 @@ function bindAuthUI() {
     $('#authPasswordToggle').setAttribute('aria-label', showing ? 'Show PIN' : 'Hide PIN');
   });
   $('#forgotPassword')?.addEventListener('click', showPinRecoveryNotice);
+  authForm?.addEventListener('input', (event) => {
+    const field = event.target;
+    if (field instanceof HTMLInputElement) field.removeAttribute('aria-invalid');
+    if (authMessage?.textContent) {
+      authMessage.textContent = '';
+      authMessage.dataset.error = 'false';
+    }
+  });
   authForm?.addEventListener('submit', async (event) => {
     event.preventDefault();
     if (authSubmit.disabled) return;
     const isSignup = authMode === 'signup';
     const phone = (() => {
       try { return normalizePhone(authPhone.value); }
-      catch (error) { say(error.message, true); authPhone.focus(); return null; }
+      catch (error) { showAuthFieldError(authPhone, error.message); return null; }
     })();
     const username = normalizeUsername(authUsername.value);
     const displayName = authDisplayName.value.trim();
     const pin = authPassword.value;
     if (!phone) return;
     if (!isSixDigitPin(pin)) {
-      say('Your PIN must contain exactly six digits.', true);
-      authPassword.focus();
+      showAuthFieldError(authPassword, 'Your PIN must contain exactly six digits.');
       return;
     }
     if (isSignup && !isValidUsername(username)) {
-      say('Username must be 3–20 characters using letters, numbers or underscores.', true);
-      authUsername.focus();
+      showAuthFieldError(authUsername, 'Username must be 3–20 characters using letters, numbers or underscores.');
       return;
     }
     if (isSignup && displayName.length < 2) {
-      say('Enter a display name with at least 2 characters.', true);
-      authDisplayName.focus();
+      showAuthFieldError(authDisplayName, 'Enter a display name with at least 2 characters.');
       return;
     }
     if (isSignup && pin !== authConfirmPassword.value) {
-      say('The PINs do not match. Check both fields and try again.', true);
-      authConfirmPassword.focus();
+      showAuthFieldError(authConfirmPassword, 'The PINs do not match. Check both fields and try again.');
       return;
     }
 
