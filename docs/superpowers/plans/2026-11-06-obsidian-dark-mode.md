@@ -83,7 +83,7 @@
 - Modify: `DESIGN.md`
 - Create: `tests/dark-mode-ui.test.js`
 
-- [x] Set Obsidian as the static PWA `theme_color` and `background_color` fallback; update the runtime meta value with the resolved preference.
+- [x] Preserve the original navy PWA `theme_color` and `background_color` fallback; update the runtime meta value with the resolved preference and theme the boot spinner before first paint.
 - [x] Document the Obsidian palette, appearance preference contract and no-purple rule in `DESIGN.md`.
 - [ ] Add integration assertions for pre-paint resolution, settings entry points, theme import, no purple-family tokens and untouched learner preview.
 - [ ] Verify all tests, `npm run check`, production build and the existing Playwright browser/PWA suite.
