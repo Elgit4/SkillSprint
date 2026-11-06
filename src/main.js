@@ -246,8 +246,8 @@ function nav(page, { updateHash = true } = {}) {
 function openModal(html, eyebrow = 'SkillSprint') {
   const backdrop = $('#modalBackdrop');
   if (!backdrop) return;
-  $('#modalBackdrop')?.classList.remove('playground-open');
-  $('#modal')?.classList.remove('modal--playground');
+  $('#modalBackdrop')?.classList.remove('playground-open', 'mission-map-open');
+  $('#modal')?.classList.remove('modal--playground', 'modal--mission-map');
   $('#modalContent').innerHTML = html;
   $('#modalEyebrow').textContent = eyebrow;
   backdrop.classList.add('open');
@@ -260,8 +260,8 @@ function closeModal() {
   if (playgroundMessageHandler) { window.removeEventListener('message', playgroundMessageHandler); playgroundMessageHandler = null; }
   if ($('#passwordResetForm')) passwordResetOpen = false;
   const backdrop = $('#modalBackdrop');
-  backdrop?.classList.remove('open', 'playground-open');
-  $('#modal')?.classList.remove('modal--playground');
+  backdrop?.classList.remove('open', 'playground-open', 'mission-map-open');
+  $('#modal')?.classList.remove('modal--playground', 'modal--mission-map');
   $('#playPreview')?.removeAttribute('srcdoc');
   backdrop?.setAttribute('aria-hidden', 'true');
   document.body.classList.remove('modal-open');
@@ -1304,9 +1304,17 @@ function openSettings(kind) {
 }
 
 function showMissionMap() {
-  const totalLessons = state.lessons.length;
-  const totalDone = state.completed.size;
+  const visibleLessons = state.lessons;
+  const totalLessons = visibleLessons.length;
+  const totalDone = visibleLessons.filter((lesson) => state.completed.has(lesson.id)).length;
   const percentAll = totalLessons ? Math.round((totalDone / totalLessons) * 100) : 0;
+  const nextOverall = visibleLessons.find((lesson) => !state.completed.has(lesson.id));
+  const nextPath = nextOverall ? state.paths.find((path) => path.id === nextOverall.path_id) : null;
+  const finishedPaths = state.paths.filter((path) => {
+    const lessons = currentLessonsForPath(path.id);
+    return lessons.length > 0 && lessons.every((lesson) => state.completed.has(lesson.id));
+  }).length;
+
   const pathCards = state.paths.map((path, pathIndex) => {
     const lessons = currentLessonsForPath(path.id);
     const done = lessons.filter((lesson) => state.completed.has(lesson.id)).length;
@@ -1316,23 +1324,102 @@ function showMissionMap() {
       const complete = state.completed.has(lesson.id);
       const isNext = !complete && lesson.id === next?.id;
       const nodeState = complete ? 'complete' : isNext ? 'current' : 'upcoming';
-      return `<button class="mission-map-node ${nodeState}" type="button" data-roadmap-lesson="${esc(lesson.id)}" aria-label="${complete ? 'Completed' : isNext ? 'Next mission' : 'Open mission'}: ${esc(lesson.title)}">
-        <span class="mission-map-node-mark">${complete ? iconSvg('check') : String(index + 1).padStart(2, '0')}</span>
-        <span class="mission-map-node-copy"><strong>${esc(lesson.title)}</strong><small>${complete ? 'Completed' : isNext ? 'Next up' : `Mission ${index + 1}`} · ${Number(lesson.reward_xp) || 0} XP</small></span>
-      </button>`;
+      const reward = Math.max(0, Number(lesson.reward_xp) || 0);
+      const status = complete ? 'Cleared' : isNext ? 'Up next' : 'Ready when you are';
+      const marker = complete ? iconSvg('check') : String(index + 1).padStart(2, '0');
+      return `<div class="mission-map-step is-${index % 2 === 0 ? 'left' : 'right'} ${nodeState}">
+        <button class="mission-map-node-card" type="button" data-roadmap-lesson="${esc(lesson.id)}" aria-label="${complete ? 'Review completed mission' : isNext ? 'Continue to next mission' : 'Open mission'}: ${esc(lesson.title)}">
+          <span class="mission-map-node-copy">
+            <span class="mission-map-node-kicker">${isNext ? 'NEXT MILESTONE' : 'MISSION ' + String(index + 1).padStart(2, '0')}</span>
+            <strong>${esc(lesson.title)}</strong>
+            <span class="mission-map-node-meta"><span class="mission-map-node-status">${status}</span><span class="mission-map-node-xp">${reward} XP</span></span>
+          </span>
+          <span class="mission-map-node-arrow" aria-hidden="true">→</span>
+        </button>
+        <span class="mission-map-node-pin" aria-hidden="true">${marker}</span>
+      </div>`;
     }).join('');
-    return `<section class="mission-map-path">
-      <header class="mission-map-path-head"><span class="mission-map-path-icon">${iconSvg(pathIconName(path), 'path-svg-icon')}</span><div class="mission-map-path-copy"><div class="eyebrow">PATH ${String(pathIndex + 1).padStart(2, '0')} · ${esc(path.level || 'Beginner')}</div><h3>${esc(path.title)}</h3><p>${esc(path.description)}</p></div><strong class="mission-map-percent">${percent}%</strong></header>
-      <div class="mission-map-progress"><span style="width:${percent}%"></span></div>
-      <div class="mission-map-nodes">${nodes || '<p class="muted small">Lessons will appear here when this path is published.</p>'}</div>
-      <footer class="mission-map-path-foot"><span>${done} of ${lessons.length} missions completed</span><button class="text-link" type="button" data-roadmap-path="${esc(path.id)}">Open path <span aria-hidden="true">→</span></button></footer>
+
+    return `<section class="mission-map-path ${percent === 100 && lessons.length ? 'is-finished' : ''}">
+      <header class="mission-map-path-head">
+        <span class="mission-map-path-icon">${iconSvg(pathIconName(path), 'path-svg-icon')}</span>
+        <div class="mission-map-path-copy">
+          <div class="mission-map-path-kicker">ROUTE ${String(pathIndex + 1).padStart(2, '0')} <span>·</span> ${esc(path.level || 'Beginner')}</div>
+          <h3>${esc(path.title)}</h3>
+          <p>${esc(path.description || 'A focused route to build practical skills.')}</p>
+        </div>
+        <div class="mission-map-path-score"><strong>${percent}%</strong><span>complete</span></div>
+      </header>
+      <div class="mission-map-progress" role="progressbar" aria-label="${esc(path.title)} completion" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${percent}"><span style="width:${percent}%"></span></div>
+      <div class="mission-map-path-meta"><span>${done} of ${lessons.length} missions cleared</span><span>${lessons.length - done} to go</span></div>
+      <div class="mission-map-route">${nodes || '<div class="mission-map-empty-route">Missions for this route will appear here once they are published.</div>'}</div>
+      <footer class="mission-map-path-foot">
+        <span>${percent === 100 && lessons.length ? 'Route completed · excellent work' : next ? 'Keep your momentum going' : 'Ready for your next route?'}</span>
+        <button class="text-link" type="button" data-roadmap-path="${esc(path.id)}">View path <span aria-hidden="true">→</span></button>
+      </footer>
     </section>`;
   }).join('');
-  openModal(`<div class="mission-map-summary"><div><span class="eyebrow">YOUR LEARNING ROUTE</span><h2 id="modalTitle">Mission map</h2><p class="muted">Follow each path, complete missions and build skills step by step.</p></div><div class="mission-map-total"><strong>${totalDone}/${totalLessons}</strong><small>missions complete</small></div><div class="mission-map-total-track"><span style="width:${percentAll}%"></span></div></div><div class="mission-map-legend"><span><i class="legend-dot done"></i> Completed</span><span><i class="legend-dot current"></i> Next mission</span><span><i class="legend-dot upcoming"></i> Available</span></div><div class="mission-map-board">${pathCards || '<p class="muted">No published paths yet.</p>'}</div>`, 'Learning roadmap');
-  $$('[data-roadmap-lesson]').forEach((button) => button.addEventListener('click', () => { const id = button.dataset.roadmapLesson; closeModal(); openLesson(id); }));
-  $$('[data-roadmap-path]').forEach((button) => button.addEventListener('click', () => { const id = button.dataset.roadmapPath; closeModal(); openPath(id); }));
-}
 
+  const nextMission = nextOverall ? `<section class="mission-map-next">
+    <span class="mission-map-next-icon" aria-hidden="true">${iconSvg('sparkle')}</span>
+    <div class="mission-map-next-copy">
+      <span class="mission-map-next-label">YOUR NEXT MOVE${nextPath ? ' · ' + esc(nextPath.title) : ''}</span>
+      <strong>${esc(nextOverall.title)}</strong>
+      <small>${Math.max(0, Number(nextOverall.reward_xp) || 0)} XP waiting · one mission at a time</small>
+    </div>
+    <button class="mission-map-continue" type="button" data-roadmap-lesson="${esc(nextOverall.id)}">Continue <span aria-hidden="true">→</span></button>
+  </section>` : totalLessons ? `<section class="mission-map-next is-finished">
+    <span class="mission-map-next-icon" aria-hidden="true">${iconSvg('award')}</span>
+    <div class="mission-map-next-copy"><span class="mission-map-next-label">ALL ROUTES CLEARED</span><strong>You’ve made it to the end.</strong><small>Revisit a mission or explore another skill to keep growing.</small></div>
+    <button class="mission-map-continue" type="button" data-tab="explore">Explore paths <span aria-hidden="true">→</span></button>
+  </section>` : '';
+
+  const heroRing = `<div class="mission-map-overview-ring" style="--progress-angle:${percentAll * 3.6}deg" role="img" aria-label="${percentAll}% of all missions completed"><div><strong>${percentAll}%</strong><span>complete</span></div></div>`;
+  openModal(`<div class="mission-map-shell">
+    <section class="mission-map-hero">
+      <div class="mission-map-hero-grid" aria-hidden="true"></div>
+      <div class="mission-map-hero-main">
+        <div class="mission-map-overline"><span class="mission-map-overline-dot"></span> YOUR SKILLSPRINT JOURNEY</div>
+        <h2 id="modalTitle">Mission map<span>.</span></h2>
+        <p>Every skill is a route. Every mission moves you forward. See where you are and choose your next step.</p>
+        <div class="mission-map-hero-stats">
+          <div><strong>${totalDone}<span>/${totalLessons}</span></strong><small>Missions cleared</small></div>
+          <i></i>
+          <div><strong>${state.paths.length}</strong><small>Learning routes</small></div>
+          <i></i>
+          <div><strong>${finishedPaths}</strong><small>Routes mastered</small></div>
+        </div>
+      </div>
+      <div class="mission-map-hero-aside">${heroRing}<span class="mission-map-ring-caption">YOUR OVERALL<br>MASTERY</span></div>
+      <div class="mission-map-hero-footer"><span>YOUR PROGRESS, ONE MISSION AT A TIME</span><span>${percentAll === 100 && totalLessons ? 'ALL MISSIONS COMPLETE' : (totalLessons - totalDone) + ' MISSIONS LEFT TO EXPLORE'}</span></div>
+    </section>
+    ${nextMission}
+    <section class="mission-map-routes-section">
+      <div class="mission-map-section-heading">
+        <div><span class="mission-map-section-kicker">THE BIG PICTURE</span><h3>Your learning routes</h3><p>Pick up where you left off or revisit a milestone.</p></div>
+        <span class="mission-map-route-count">${state.paths.length} ${state.paths.length === 1 ? 'route' : 'routes'}</span>
+      </div>
+      <div class="mission-map-board">${pathCards || '<div class="mission-map-no-paths"><span aria-hidden="true">✦</span><strong>Your map is waiting to be explored.</strong><p>Published learning paths will appear here when they are available.</p><button class="mission-map-continue" type="button" data-tab="explore">Explore learning paths →</button></div>'}</div>
+    </section>
+    <footer class="mission-map-footer"><span>SkillSprint <i>·</i> Learn, build, grow.</span><span>Powered by <strong>ElTech</strong></span></footer>
+  </div>`, 'YOUR LEARNING ROUTE');
+  $('#modalBackdrop')?.classList.add('mission-map-open');
+  $('#modal')?.classList.add('modal--mission-map');
+  $$('[data-roadmap-lesson]').forEach((button) => button.addEventListener('click', () => {
+    const id = button.dataset.roadmapLesson;
+    closeModal();
+    openLesson(id);
+  }));
+  $$('[data-roadmap-path]').forEach((button) => button.addEventListener('click', () => {
+    const id = button.dataset.roadmapPath;
+    closeModal();
+    openPath(id);
+  }));
+  $$('[data-tab="explore"]', $('#modalContent')).forEach((button) => button.addEventListener('click', () => {
+    closeModal();
+    $('.nav-item[data-tab="explore"]')?.click();
+  }));
+}
 function showAchievements() {
   openModal(`<h2 id="modalTitle">Achievement shelf</h2><p class="muted">Achievements are unlocked by completing real learning activity.</p>
     <div class="achievement-grid">${state.achievements.map((achievement) => {
