@@ -211,6 +211,7 @@ function lock() {
 function unlock() {
   if (gate) gate.hidden = true;
   app?.classList.remove('auth-locked');
+  showOriginalWelcomeSplash();
 }
 
 function initials(value) {
@@ -279,20 +280,28 @@ function friendlyError(error) {
   return raw;
 }
 
-// Original SkillSprint welcome splash. A versioned key replays it once after this update.
+// Original SkillSprint welcome splash. Show it after account access is unlocked,
+// never on top of the sign-in form where it would intercept mobile taps.
+let welcomeShownThisPage = false;
+function showOriginalWelcomeSplash() {
+  const dialog = $('#welcome');
+  if (!dialog || dialog.open || welcomeShownThisPage) return;
+  const key = 'skillsprint:welcome:v2';
+  let seen = false;
+  try { seen = localStorage.getItem(key) === '1'; } catch { /* Storage may be unavailable. */ }
+  if (seen) return;
+  welcomeShownThisPage = true;
+  try { dialog.showModal(); }
+  catch { dialog.setAttribute('open', ''); }
+}
+
 (function initializeOriginalWelcomeSplash() {
   const dialog = $('#welcome');
   if (!dialog) return;
   const key = 'skillsprint:welcome:v2';
-  let seen = false;
-  try { seen = localStorage.getItem(key) === '1'; } catch { /* Storage may be unavailable. */ }
   const remember = () => { try { localStorage.setItem(key, '1'); } catch { /* Storage may be unavailable. */ } };
   $('#welcomeGo')?.addEventListener('click', () => { remember(); if (dialog.open) dialog.close(); });
   dialog.addEventListener('close', remember);
-  if (!seen) {
-    try { dialog.showModal(); }
-    catch { dialog.setAttribute('open', ''); }
-  }
 })();
 
 
