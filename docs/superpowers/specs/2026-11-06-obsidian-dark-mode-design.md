@@ -25,7 +25,7 @@ Add a complete dark appearance to SkillSprint that feels like a focused, premium
 - Success: `#B8E58B`
 - Error: `#FF9AA8`
 
-**Dark-theme prohibition:** Do not render purple, violet, lavender, indigo or purple-tinted gradients, borders, shadows, focus rings, selected states or achievement surfaces. Existing legacy `--violet` references must resolve to lime in dark mode so existing components do not leak purple. This prohibition is scoped to dark mode; the existing light appearance is not being redesigned.
+**Dark-theme prohibition:** Do not use purple, violet, lavender, indigo or purple-tinted gradients, borders, shadows, focus rings, selected states or achievement surfaces in the dark theme's UI palette and component styling. Existing legacy `--violet` references must resolve to lime in dark mode so existing components do not leak purple. The approved hero mascot artwork is preserved unchanged as a brand asset; its hoodie contains purple. Replacing or recolouring that asset is outside this theme implementation. The existing light appearance is not being redesigned.
 
 ## Goals
 
