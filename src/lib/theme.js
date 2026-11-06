@@ -1,7 +1,7 @@
 export const THEME_STORAGE_KEY = 'skillsprint:theme:v1';
 export const THEME_PREFERENCES = Object.freeze(['system', 'light', 'dark']);
 export const THEME_COLORS = Object.freeze({
-  light: '#F4F6FF',
+  light: '#14234B',
   dark: '#080B0F',
 });
 
