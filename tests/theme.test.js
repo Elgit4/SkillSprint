@@ -96,7 +96,7 @@ test('persists manual choices and applies them without reloading', () => {
   controller.setPreference('light');
   assert.equal(env.storage.get(THEME_STORAGE_KEY), 'light');
   assert.equal(env.root.attributes['data-theme'], 'light');
-  assert.equal(env.meta.attributes.content, '#F4F6FF');
+  assert.equal(env.meta.attributes.content, '#14234B');
   controller.destroy();
 });
 
