@@ -3,6 +3,7 @@ import './styles/playground.css';
 import { downloadBlob } from './lib/download.js';
 import { supabase, isSupabaseConfigured } from './lib/supabase.js';
 import { completedLessonIds, mergeLessonIds, createSerialQueue } from './lib/progress-state.js';
+import { normalizePhone } from './lib/auth-phone.js';
 import {
   createPracticeSession,
   advancePracticeSession,
@@ -1827,15 +1828,7 @@ function isSixDigitPin(value) {
   return /^[0-9]{6}$/.test(String(value || ''));
 }
 
-function normalizePhone(value) {
-  let phone = String(value || '').trim().replace(/[\s().-]/g, '');
-  if (/^0\d{9}$/.test(phone)) phone = '+233' + phone.slice(1);
-  else if (/^233\d{9}$/.test(phone)) phone = '+' + phone;
-  if (!/^\+[1-9]\d{7,14}$/.test(phone)) {
-    throw new Error('Enter a valid telephone number with country code, for example +233241234567.');
-  }
-  return phone;
-}
+
 
 // Supabase email/password auth is used as the transport so this app does not
 // depend on Supabase Phone Auth, an SMS gateway, or an email inbox. The reserved
