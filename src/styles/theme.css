@@ -1992,3 +1992,22 @@ html[data-theme="dark"] .studio-tab:focus-visible {
   outline-color: #78C8E8;
 }
 
+
+
+/* Small inline colour declarations retained in the original markup. */
+html[data-theme="dark"] .continue-card .eyebrow {
+  color: #C9F06B !important;
+}
+
+html[data-theme="dark"] .continue-card .progress-track {
+  background: #354438 !important;
+}
+
+html[data-theme="dark"] .profile-card .eyebrow[style*="#c9c0f5"] {
+  color: #C9F06B !important;
+}
+
+html[data-theme="dark"] .profile-card span[style*="#c9c4d2"] {
+  color: #A6B0BD !important;
+}
+
