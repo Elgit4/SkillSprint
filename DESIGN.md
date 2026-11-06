@@ -141,7 +141,8 @@ The dark theme is a black-first, calm, focused learning workspace. Use **Obsidia
 | Primary surface | `#141A22` | Cards, forms and panels |
 | Raised surface | `#1D2631` | Nested panels, modal sections and controls |
 | Tertiary surface | `#243449` | Selected neutral containers and code-workspace chrome |
-| Border | `#303945` | Card and field boundaries |
+| Border | `#303945` | Quiet decorative dividers and card boundaries |
+| Control outline | `#64758B` | Interactive field, chip, option and button boundaries |
 | Primary text | `#F5F7FA` | Headings and important content |
 | Secondary text | `#A6B0BD` | Descriptions and supporting copy |
 | Muted text | `#8E9AAA` | Metadata and secondary labels |
@@ -158,6 +159,8 @@ No purple, violet, lavender or indigo hue may be used in the dark theme's UI pal
 **Existing-artwork exception:** the approved SkillSprint hero mascot asset is preserved unchanged for brand continuity; its supplied hoodie artwork contains purple. The app's dark-mode surfaces, accents and component states do not use purple. Replacing or recolouring that supplied character artwork is a separate asset change.
 
 This is a dark-mode-only rule. The retained light appearance and its existing accent colours are not redesigned by this work.
+
+Use a stronger `#64758B` outline for interactive controls; keep `#303945` for decorative separation. Do not rely on a low-contrast hairline as the only sign that a field, option or control is interactive.
 
 ### Appearance preference
 
