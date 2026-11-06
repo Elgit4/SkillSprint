@@ -186,7 +186,7 @@ This is a dark-mode-only rule. The retained light appearance and its existing ac
 - `src/styles/theme.css` owns dark semantic overrides and component-specific dark treatments.
 - `src/lib/theme.js` owns preference normalisation, resolution, persistence, system listening and cross-tab synchronisation.
 - `index.html` performs pre-paint resolution; `theme-color` follows the resolved appearance.
-- The PWA manifest uses Obsidian as its static launch/splash fallback.
+- The PWA manifest retains the existing SkillSprint navy static launch/splash fallback for light-mode compatibility; the runtime `theme-color` meta changes to Obsidian when Dark is active.
 - Target WCAG 2.2 AA contrast for text and non-text UI, retain visible focus, and respect reduced motion, responsive layouts and mobile safe areas.
 
 ## Do's and Don'ts
