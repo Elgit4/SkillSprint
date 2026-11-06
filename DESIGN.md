@@ -4,13 +4,13 @@ name: SkillSprint
 description: A practical technology-learning product with the feel of a focused digital workshop: clear, energetic and grounded in making real things.
 colors:
   primary: "#14234B"
-  secondary: "#C9F06B"
-  accent: "#7057E8"
-  background: "#F7F5F0"
-  surface: "#FFFEFA"
-  foreground: "#211D2B"
-  foreground-muted: "#777281"
-  border: "#E8E4DC"
+  secondary: "#B9FF6A"
+  accent: "#6657EF"
+  background: "#F4F6FF"
+  surface: "#FFFFFF"
+  foreground: "#17172D"
+  foreground-muted: "#72758E"
+  border: "#E4E7F5"
 typography:
   display:
     fontFamily: "'Bricolage Grotesque', Inter, system-ui, sans-serif"
@@ -66,13 +66,13 @@ SkillSprint should feel like a **well-equipped digital workshop for learning tec
 This is the retained light-mode palette. The Obsidian dark appearance is documented separately below and does not change these light-mode values.
 
 - **Primary navy — `#14234B`:** Brand canvas and primary action. Use for strong structural contrast, not for every element.
-- **Lime — `#C9F06B`:** A restrained signal for progress and the code-workbench detail. Never use it as a large background on the login form.
-- **Violet — `#7057E8`:** Existing app accent for learning progress and selected states.
-- **Canvas — `#F7F5F0`:** Soft page background.
-- **Surface — `#FFFEFA`:** Main form surface.
-- **Ink — `#211D2B`:** Primary text on light surfaces.
-- **Muted — `#777281`:** Secondary text; keep contrast adequate for helper and error copy.
-- **Border — `#E8E4DC`:** Quiet control and panel boundaries.
+- **Lime — `#B9FF6A`:** The light theme's progress and learning-action accent.
+- **Violet — `#6657EF`:** Existing light-theme accent for selected states and learning progress.
+- **Canvas — `#F4F6FF`:** The effective light application background.
+- **Surface — `#FFFFFF`:** Main card and panel surface.
+- **Ink — `#17172D`:** Primary text on light surfaces.
+- **Muted — `#72758E`:** Secondary text and metadata.
+- **Border — `#E4E7F5`:** Quiet control and panel boundaries.
 
 Use semantic contrast rather than color alone for errors, focus, completion and disabled states. Focus rings must remain visible on both navy and light surfaces.
 
@@ -153,7 +153,9 @@ The dark theme is a black-first, calm, focused learning workspace. Use **Obsidia
 
 ### Dark-mode colour rule
 
-No purple, violet, lavender or indigo hue may be rendered anywhere in dark mode. This includes primary/secondary accents, selected states, progress fills, gradients, focus treatments, shadows, achievements, icons and Mission Map styling. Existing legacy CSS selectors that reference `--violet` must resolve to the lime accent when `data-theme="dark"` is active. Do not add new purple-family dark tokens.
+No purple, violet, lavender or indigo hue may be used in the dark theme's UI palette or component styling. This includes selected states, progress fills, gradients, focus treatments, shadows, achievements, icons and Mission Map styling. Existing legacy CSS selectors that reference `--violet` must resolve to the lime accent when `data-theme="dark"` is active. Do not add new purple-family dark UI tokens.
+
+**Existing-artwork exception:** the approved SkillSprint hero mascot asset is preserved unchanged for brand continuity; its supplied hoodie artwork contains purple. The app's dark-mode surfaces, accents and component states do not use purple. Replacing or recolouring that supplied character artwork is a separate asset change.
 
 This is a dark-mode-only rule. The retained light appearance and its existing accent colours are not redesigned by this work.
 
