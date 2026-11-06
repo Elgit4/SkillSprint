@@ -74,8 +74,10 @@ test('keeps the learner-authored playground preview white while theming its surr
   assert.match(themeCss, /\.studio-preview-stage iframe\s*\{[^}]*background:\s*#FFFFFF/is);
 });
 
-test('provides a dark fallback for the installed PWA and updates browser chrome at runtime', () => {
-  assert.match(manifest, /"theme_color":\s*"#080B0F"/);
-  assert.match(manifest, /"background_color":\s*"#080B0F"/);
+test('preserves the original PWA launch fallback and applies the dark boot theme at runtime', () => {
+  assert.match(manifest, /"theme_color":\\s*"#14234b"/i);
+  assert.match(manifest, /"background_color":\\s*"#14234b"/i);
+  assert.match(html, /html\\[data-theme=\\\"dark\\\"\\] #ssBootScreen/);
+  assert.match(html, /border-top-color:#C9F06B/);
   assert.match(main, /createThemeController/);
 });
