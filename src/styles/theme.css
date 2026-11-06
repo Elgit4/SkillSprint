@@ -1677,3 +1677,318 @@ html[data-theme="dark"] .install-instructions strong {
     transition-duration: .01ms !important;
   }
 }
+
+
+/* Legacy component coverage — ensure older light-only accents do not leak purple. */
+html[data-theme="dark"] .hero {
+  border: 1px solid #303945;
+  background: radial-gradient(115% 95% at 85% 0%, #20313A 0%, #121B24 50%, #0D131A 100%);
+  color: #F5F7FA;
+  box-shadow: none;
+}
+
+html[data-theme="dark"] .hero .eyebrow,
+html[data-theme="dark"] .hero-copy .eyebrow {
+  color: #C9F06B;
+}
+
+html[data-theme="dark"] .hero h2 {
+  color: #F5F7FA;
+}
+
+html[data-theme="dark"] .hero p {
+  color: #B9C6D4;
+}
+
+html[data-theme="dark"] .hero-stage::before {
+  border: 1px solid #3B4A4D;
+  background: linear-gradient(180deg, #263A38 0%, #192B2A 52%, #111D20 100%);
+}
+
+html[data-theme="dark"] .hero-mascot {
+  filter: drop-shadow(0 12px 22px rgba(0, 0, 0, .42));
+}
+
+html[data-theme="dark"] .level-emblem {
+  border: 1px solid #D8F58D;
+  background: #C9F06B;
+  color: #182116;
+  box-shadow: none !important;
+}
+
+html[data-theme="dark"] .level-copy .eyebrow,
+html[data-theme="dark"] .level-copy p,
+html[data-theme="dark"] .level-foot,
+html[data-theme="dark"] .xp-total {
+  color: #A6B0BD;
+}
+
+html[data-theme="dark"] .rank-spark {
+  color: #C9F06B;
+}
+
+html[data-theme="dark"] .day.today b {
+  border-color: #C9F06B;
+  background: #C9F06B;
+  color: #182116;
+  box-shadow: 0 3px 0 #526A3C;
+  animation: none;
+}
+
+html[data-theme="dark"] .day.today small {
+  color: #C9F06B;
+}
+
+html[data-theme="dark"] .day.done b {
+  border-color: #526A3C;
+  background: #263722;
+  color: #D8F58D;
+}
+
+html[data-theme="dark"] .arrow-btn {
+  border: 1px solid #526A3C;
+  background: #263722;
+  color: #C9F06B;
+  box-shadow: none;
+}
+
+html[data-theme="dark"] .arrow-btn:hover {
+  border-color: #C9F06B;
+  background: #30472A;
+}
+
+html[data-theme="dark"] .mission-banner {
+  border: 1px solid #3A4B48;
+  background: #182724;
+  color: #F5F7FA;
+}
+
+html[data-theme="dark"] .mission-banner .big-symbol {
+  color: #C9F06B;
+}
+
+html[data-theme="dark"] .path-card.compact:hover,
+html[data-theme="dark"] .path-card.compact:focus-visible,
+html[data-theme="dark"] .mission-row:has(button:hover),
+html[data-theme="dark"] .quiz-option:focus-visible {
+  border-color: #70849A;
+}
+
+html[data-theme="dark"] .levelup {
+  border: 1px solid #303945;
+  background: rgba(8, 11, 15, .94);
+  color: #F5F7FA;
+}
+
+html[data-theme="dark"] .levelup strong,
+html[data-theme="dark"] .levelup span {
+  color: #C9F06B;
+}
+
+/* Secondary activity, streak and lesson feedback dialogs. */
+html[data-theme="dark"] .lesson-response,
+html[data-theme="dark"] .playground-editors textarea {
+  border-color: #394657;
+  background: #0D131A;
+  color: #E7EDF3;
+  caret-color: #C9F06B;
+}
+
+html[data-theme="dark"] .lesson-response:focus,
+html[data-theme="dark"] .playground-editors textarea:focus {
+  border-color: #78C8E8;
+  outline: 2px solid rgba(120, 200, 232, .2);
+}
+
+html[data-theme="dark"] .lesson-feedback {
+  color: #A6B0BD;
+}
+
+html[data-theme="dark"] .code-sample {
+  border: 1px solid #303945;
+  background: #0D131A;
+  color: #DCE4EA;
+}
+
+html[data-theme="dark"] .activity-feed .activity-row {
+  border-bottom-color: #303945;
+}
+
+html[data-theme="dark"] .activity-row strong {
+  color: #F5F7FA;
+}
+
+html[data-theme="dark"] .activity-row small {
+  color: #A6B0BD;
+}
+
+html[data-theme="dark"] .activity-mark {
+  border: 1px solid #40513A;
+  background: #243321;
+  color: #C9F06B;
+}
+
+html[data-theme="dark"] .activity-mark.complete {
+  border-color: #526A3C;
+  background: #1C2B20;
+  color: #B8E58B;
+}
+
+html[data-theme="dark"] .streak-summary > div {
+  border: 1px solid #303945;
+  background: #141A22;
+}
+
+html[data-theme="dark"] .streak-summary strong {
+  color: #F5F7FA;
+}
+
+html[data-theme="dark"] .streak-summary small {
+  color: #A6B0BD;
+}
+
+/* Avatar selection and legacy mission-map classes. */
+html[data-theme="dark"] .avatar-choice {
+  border-color: #394657;
+  background: #141A22;
+  color: #E7EDF3;
+}
+
+html[data-theme="dark"] .avatar-choice.selected {
+  border-color: #C9F06B;
+  background: #1B281D;
+  box-shadow: inset 0 0 0 1px rgba(201, 240, 107, .15);
+}
+
+html[data-theme="dark"] .avatar-choice:focus-visible {
+  outline-color: #78C8E8;
+}
+
+html[data-theme="dark"] .avatar-choice img,
+html[data-theme="dark"] .initials-sample {
+  background: #202B38;
+}
+
+html[data-theme="dark"] .initials-sample {
+  color: #C9F06B;
+}
+
+html[data-theme="dark"] .mission-map-summary h2,
+html[data-theme="dark"] .mission-map-total strong,
+html[data-theme="dark"] .mission-map-percent,
+html[data-theme="dark"] .mission-map-path-copy h3 {
+  color: #F5F7FA;
+}
+
+html[data-theme="dark"] .mission-map-summary p,
+html[data-theme="dark"] .mission-map-total small,
+html[data-theme="dark"] .mission-map-legend,
+html[data-theme="dark"] .mission-map-path-copy p,
+html[data-theme="dark"] .mission-map-node-copy small {
+  color: #A6B0BD;
+}
+
+html[data-theme="dark"] .mission-map-total-track,
+html[data-theme="dark"] .mission-map-progress {
+  background: #303945;
+}
+
+html[data-theme="dark"] .mission-map-total-track span,
+html[data-theme="dark"] .mission-map-progress span {
+  background: #C9F06B;
+}
+
+html[data-theme="dark"] .legend-dot.current {
+  background: #C9F06B;
+  box-shadow: 0 0 0 3px rgba(201, 240, 107, .14);
+}
+
+html[data-theme="dark"] .mission-map-path-icon {
+  border: 1px solid #40513A;
+  background: #243321;
+  color: #C9F06B;
+}
+
+html[data-theme="dark"] .mission-map-node {
+  border-color: #394657;
+  background: #1D2631;
+  color: #F5F7FA;
+}
+
+html[data-theme="dark"] .mission-map-node:hover {
+  border-color: #70849A;
+  background: #243449;
+}
+
+html[data-theme="dark"] .mission-map-node-mark {
+  border: 1px solid #425164;
+  background: #243449;
+  color: #C6D1DC;
+}
+
+html[data-theme="dark"] .mission-map-node.complete .mission-map-node-mark {
+  border-color: #526A3C;
+  background: #263722;
+  color: #D8F58D;
+}
+
+html[data-theme="dark"] .mission-map-node.current {
+  border-color: #60764B;
+  background: #202D20;
+}
+
+html[data-theme="dark"] .mission-map-node.current .mission-map-node-mark {
+  border-color: #D8F58D;
+  background: #C9F06B;
+  color: #182116;
+}
+
+/* Legacy Build Lab chrome. The preview document remains authored by the learner. */
+html[data-theme="dark"] .studio-heading h2,
+html[data-theme="dark"] .studio-preview-title {
+  color: #F5F7FA;
+}
+
+html[data-theme="dark"] .studio-eyebrow {
+  color: #C9F06B;
+}
+
+html[data-theme="dark"] .studio-tab.active {
+  color: #F5F7FA;
+}
+
+html[data-theme="dark"] .studio-tab.active::after {
+  background: #C9F06B;
+}
+
+html[data-theme="dark"] #studioCode {
+  border-color: #303945;
+  background: #0D131A;
+  color: #E7EDF3;
+  caret-color: #C9F06B;
+}
+
+html[data-theme="dark"] #studioCode:focus {
+  box-shadow: inset 0 0 0 1px #78C8E8;
+}
+
+html[data-theme="dark"] .studio-viewports {
+  background: #111821;
+}
+
+html[data-theme="dark"] .studio-viewports button {
+  color: #A6B0BD;
+}
+
+html[data-theme="dark"] .studio-viewports button.active {
+  border: 1px solid #C9F06B;
+  background: #C9F06B;
+  color: #182116;
+  box-shadow: none;
+}
+
+html[data-theme="dark"] .studio-viewports button:focus-visible,
+html[data-theme="dark"] .studio-tab:focus-visible {
+  outline-color: #78C8E8;
+}
+
