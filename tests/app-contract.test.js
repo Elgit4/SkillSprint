@@ -72,3 +72,15 @@ test('lesson-answer refreshes reuse the current catalogue instead of downloading
   assert.doesNotMatch(progressRefresh, /fetchAllPublishedLessons|learning_paths/);
   assert.match(main, /await refreshUserProgress\(\)/);
 });
+
+test('first-visit welcome dialog waits until after authentication so it cannot block login', () => {
+  const unlockStart = main.indexOf('function unlock()');
+  const unlockEnd = main.indexOf('\n}', unlockStart) + 2;
+  assert.ok(unlockStart >= 0 && unlockEnd > unlockStart, 'Expected the auth unlock helper');
+  assert.match(main.slice(unlockStart, unlockEnd), /showOriginalWelcomeSplash\(\)/);
+
+  const initStart = main.indexOf('(function initializeOriginalWelcomeSplash()');
+  const initEnd = main.indexOf('})();', initStart) + 4;
+  assert.ok(initStart >= 0 && initEnd > initStart, 'Expected welcome control initialization');
+  assert.doesNotMatch(main.slice(initStart, initEnd), /showModal\(\)/);
+});
