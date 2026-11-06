@@ -31,7 +31,7 @@ import {
 } from './lib/app-core.js';
 
 const $ = (selector, root = document) => root.querySelector(selector);
-const $ = (selector, root = document) => [...root.querySelectorAll(selector)];
+const $$ = (selector, root = document) => [...root.querySelectorAll(selector)];
 
 let themeStorageRef = null;
 let themeMediaQuery = null;
@@ -1302,10 +1302,10 @@ function openSettings(kind) {
           <span class="appearance-check" aria-hidden="true">✓</span>
         </button>`).join('')}
       </div>`, 'Appearance');
-    $('[data-theme-preference]').forEach((button) => button.addEventListener('click', () => {
+    $$('[data-theme-preference]').forEach((button) => button.addEventListener('click', () => {
       const preference = button.dataset.themePreference;
       themeController.setPreference(preference);
-      $('[data-theme-preference]').forEach((choice) => {
+      $$('[data-theme-preference]').forEach((choice) => {
         choice.setAttribute('aria-pressed', String(choice === button));
       });
       syncAppearanceSettingLabel();
