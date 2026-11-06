@@ -3,6 +3,7 @@ import './styles/playground.css';
 import { downloadBlob } from './lib/download.js';
 import { supabase, isSupabaseConfigured } from './lib/supabase.js';
 import { completedLessonIds, mergeLessonIds, createSerialQueue } from './lib/progress-state.js';
+import { normalizePhone } from './lib/auth-phone.js';
 import {
   createPracticeSession,
   advancePracticeSession,
@@ -210,6 +211,7 @@ function lock() {
 function unlock() {
   if (gate) gate.hidden = true;
   app?.classList.remove('auth-locked');
+  showOriginalWelcomeSplash();
 }
 
 function initials(value) {
@@ -278,20 +280,28 @@ function friendlyError(error) {
   return raw;
 }
 
-// Original SkillSprint welcome splash. A versioned key replays it once after this update.
+// Original SkillSprint welcome splash. Show it after account access is unlocked,
+// never on top of the sign-in form where it would intercept mobile taps.
+let welcomeShownThisPage = false;
+function showOriginalWelcomeSplash() {
+  const dialog = $('#welcome');
+  if (!dialog || dialog.open || welcomeShownThisPage) return;
+  const key = 'skillsprint:welcome:v2';
+  let seen = false;
+  try { seen = localStorage.getItem(key) === '1'; } catch { /* Storage may be unavailable. */ }
+  if (seen) return;
+  welcomeShownThisPage = true;
+  try { dialog.showModal(); }
+  catch { dialog.setAttribute('open', ''); }
+}
+
 (function initializeOriginalWelcomeSplash() {
   const dialog = $('#welcome');
   if (!dialog) return;
   const key = 'skillsprint:welcome:v2';
-  let seen = false;
-  try { seen = localStorage.getItem(key) === '1'; } catch { /* Storage may be unavailable. */ }
   const remember = () => { try { localStorage.setItem(key, '1'); } catch { /* Storage may be unavailable. */ } };
   $('#welcomeGo')?.addEventListener('click', () => { remember(); if (dialog.open) dialog.close(); });
   dialog.addEventListener('close', remember);
-  if (!seen) {
-    try { dialog.showModal(); }
-    catch { dialog.setAttribute('open', ''); }
-  }
 })();
 
 
@@ -1827,15 +1837,7 @@ function isSixDigitPin(value) {
   return /^[0-9]{6}$/.test(String(value || ''));
 }
 
-function normalizePhone(value) {
-  let phone = String(value || '').trim().replace(/[\s().-]/g, '');
-  if (/^0\d{9}$/.test(phone)) phone = '+233' + phone.slice(1);
-  else if (/^233\d{9}$/.test(phone)) phone = '+' + phone;
-  if (!/^\+[1-9]\d{7,14}$/.test(phone)) {
-    throw new Error('Enter a valid telephone number with country code, for example +233241234567.');
-  }
-  return phone;
-}
+
 
 // Supabase email/password auth is used as the transport so this app does not
 // depend on Supabase Phone Auth, an SMS gateway, or an email inbox. The reserved
@@ -1876,6 +1878,10 @@ function bindAuthUI() {
   });
   authForm?.addEventListener('submit', async (event) => {
     event.preventDefault();
+    if (!isSupabaseConfigured || !supabase) {
+      say('Account access is unavailable until the Supabase project URL and publishable key are configured.', true);
+      return;
+    }
     if (authSubmit.disabled) return;
     const isSignup = authMode === 'signup';
     const phone = (() => {
@@ -1936,13 +1942,14 @@ function bindAuthUI() {
 }
 
 async function initializeAuth() {
+  // Keep the account form responsive even when backend configuration is missing.
+  bindAuthUI();
+  syncAuthMode();
   if (!isSupabaseConfigured || !supabase) {
     lock();
     say('Supabase is not configured. Add your project URL and publishable key to .env.local.', true);
     return;
   }
-  bindAuthUI();
-  syncAuthMode();
 
   const rolloutKey = 'skillsprint:sign-in-rollout:v2';
   let rolloutDone = false;

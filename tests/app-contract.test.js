@@ -5,6 +5,7 @@ import { readFile } from 'node:fs/promises';
 const html = await readFile(new URL('../index.html', import.meta.url), 'utf8');
 const main = await readFile(new URL('../src/main.js', import.meta.url), 'utf8');
 const supabase = await readFile(new URL('../src/lib/supabase.js', import.meta.url), 'utf8');
+const phoneAuth = await readFile(new URL('../src/lib/auth-phone.js', import.meta.url), 'utf8');
 
 test('the original first-visit welcome splash remains intact', () => {
   assert.match(html, /id="welcome"/);
@@ -26,7 +27,8 @@ test('authentication controls required by the app are present and wired', () => 
 test('telephone-number and PIN authentication is enforced in the app UI and client', () => {
   assert.match(html, /id=\"authPhone\"/);
   assert.doesNotMatch(html, /id=\"authEmail\"|googleSignIn|Continue with Google/i);
-  assert.match(main, /function normalizePhone\(/);
+  assert.match(main, /import \{ normalizePhone \} from '.\/lib\/auth-phone\.js';/);
+  assert.match(phoneAuth, /function normalizePhone\(/);
   assert.match(main, /function authIdentityForPhone\(/);
   assert.doesNotMatch(main, /signInWithOAuth|resetPasswordForEmail/i);
 });
@@ -69,4 +71,29 @@ test('lesson-answer refreshes reuse the current catalogue instead of downloading
   const progressRefresh = main.slice(start, end);
   assert.doesNotMatch(progressRefresh, /fetchAllPublishedLessons|learning_paths/);
   assert.match(main, /await refreshUserProgress\(\)/);
+});
+
+test('first-visit welcome dialog waits until after authentication so it cannot block login', () => {
+  const unlockStart = main.indexOf('function unlock()');
+  const unlockEnd = main.indexOf('\n}', unlockStart) + 2;
+  assert.ok(unlockStart >= 0 && unlockEnd > unlockStart, 'Expected the auth unlock helper');
+  assert.match(main.slice(unlockStart, unlockEnd), /showOriginalWelcomeSplash\(\)/);
+
+  const initStart = main.indexOf('(function initializeOriginalWelcomeSplash()');
+  const initEnd = main.indexOf('})();', initStart) + 4;
+  assert.ok(initStart >= 0 && initEnd > initStart, 'Expected welcome control initialization');
+  assert.doesNotMatch(main.slice(initStart, initEnd), /showModal\(\)/);
+});
+
+test('auth controls remain wired when backend environment variables are unavailable', () => {
+  const start = main.indexOf('async function initializeAuth()');
+  const end = main.indexOf("const rolloutKey = 'skillsprint:sign-in-rollout:v2';", start);
+  assert.ok(start >= 0 && end > start, 'Expected auth initialization');
+  const initialization = main.slice(start, end);
+  assert.ok(initialization.indexOf('bindAuthUI();') < initialization.indexOf('if (!isSupabaseConfigured || !supabase)'));
+  assert.ok(initialization.indexOf('syncAuthMode();') < initialization.indexOf('if (!isSupabaseConfigured || !supabase)'));
+
+  const submitStart = main.indexOf("authForm?.addEventListener('submit'");
+  const submitEnd = main.indexOf('\n  });', submitStart) + 6;
+  assert.match(main.slice(submitStart, submitEnd), /if \(!isSupabaseConfigured \|\| !supabase\)/);
 });

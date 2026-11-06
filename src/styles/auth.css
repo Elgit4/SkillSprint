@@ -1523,3 +1523,92 @@ button[disabled],.btn[disabled]{cursor:not-allowed;opacity:.58}
   #authGate .auth-submit,
   #authGate .auth-submit svg { transition: none; }
 }
+
+
+/* Mobile authentication: keep the full form reachable when the on-screen
+   keyboard changes the visual viewport, and let long copy wrap naturally. */
+@media (max-width: 900px) {
+  #authGate {
+    display: block;
+    min-height: 100dvh;
+    overflow-x: hidden;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-y: contain;
+  }
+  #authGate .auth-layout {
+    width: 100%;
+    min-height: 100%;
+    height: auto;
+  }
+  #authGate .auth-workspace {
+    box-sizing: border-box;
+    min-height: 100vh;
+    min-height: 100svh;
+    height: auto;
+    overflow: visible;
+    padding-bottom: calc(22px + env(safe-area-inset-bottom));
+  }
+  #authGate .auth-form-wrap {
+    flex: 0 0 auto;
+    min-width: 0;
+    overflow: visible;
+  }
+  #authGate .auth-form-heading h2,
+  #authGate .auth-form-heading p,
+  #authGate .auth-message,
+  #authGate .auth-hint {
+    overflow-wrap: anywhere;
+  }
+  #authGate .auth-label-row {
+    flex-wrap: wrap;
+    align-items: baseline;
+  }
+  #authGate .auth-password-rule {
+    white-space: normal;
+  }
+  #authGate .auth-form-meta,
+  #authGate .auth-switch,
+  #authGate .auth-workspace-footer,
+  #authGate .auth-footer-actions {
+    flex-wrap: wrap;
+  }
+  #authGate .auth-switch {
+    text-align: center;
+  }
+}
+@media (max-width: 480px) {
+  #authGate .auth-workspace {
+    padding-top: calc(18px + env(safe-area-inset-top));
+    padding-right: 14px;
+    padding-left: 14px;
+  }
+  #authGate .auth-mobile-brand {
+    margin-bottom: 18px;
+  }
+  #authGate .auth-form-wrap {
+    padding: 20px 16px;
+  }
+  #authGate .auth-form-heading {
+    margin-bottom: 20px;
+  }
+  #authGate .auth-form-heading h2 {
+    font-size: clamp(26px, 8vw, 32px);
+    line-height: 1.12;
+    overflow-wrap: anywhere;
+  }
+  #authGate .auth-form-heading p {
+    font-size: 13px;
+    line-height: 1.55;
+  }
+  #authGate .auth-form {
+    gap: 14px;
+  }
+  #authGate .auth-hint {
+    font-size: 11px;
+    line-height: 1.5;
+  }
+  #authGate .auth-workspace-footer {
+    margin-top: 18px;
+  }
+}
