@@ -2003,11 +2003,11 @@ html[data-theme="dark"] .continue-card .progress-track {
   background: #354438 !important;
 }
 
-html[data-theme="dark"] .profile-card .eyebrow[style*="#c9c0f5"] {
+html[data-theme="dark"] .profile-card .profile-level .eyebrow {
   color: #C9F06B !important;
 }
 
-html[data-theme="dark"] .profile-card span[style*="#c9c4d2"] {
+html[data-theme="dark"] .profile-card .profile-level .small {
   color: #A6B0BD !important;
 }
 
