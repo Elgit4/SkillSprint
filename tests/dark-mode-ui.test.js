@@ -108,7 +108,7 @@ test('overrides legacy hero, level, activity, mission-map and lesson surfaces wi
 });
 
 test('contains no purple-family colour literals in the dark theme stylesheet', () => {
-  const values = [...themeCss.matchAll(/#[0-9a-f]{3,4}\\b|#[0-9a-f]{6}(?:[0-9a-f]{2})?\\b/gi)].map(([value]) => value);
+  const values = [...themeCss.matchAll(/#(?:[0-9a-f]{8}|[0-9a-f]{6}|[0-9a-f]{4}|[0-9a-f]{3})/gi)].map(([value]) => value);
   for (const value of values) {
     const { hue, saturation } = hueAndSaturation(value);
     const isPurpleFamily = saturation >= 0.13 && hue >= 245 && hue <= 325;
