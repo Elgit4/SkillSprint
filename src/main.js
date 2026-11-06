@@ -1358,6 +1358,7 @@ function openSettings(kind) {
     openModal(`<h2 id="modalTitle">Account settings</h2><p class="muted">Manage your identity, learning preferences and account access.</p>
       <div class="settings-panel">
         <button class="settings-choice" type="button" data-setting="edit-profile"><span>${iconSvg('user')}</span><div><strong>Edit profile</strong><small>@${esc(state.profile?.username || 'learner')} · ${esc(state.profile?.display_name || 'Learner')}</small></div></button>
+        <button class="settings-choice" type="button" data-setting="appearance"><span>${iconSvg('activity')}</span><div><strong>Appearance</strong><small>${themeController.getPreference() === 'system' ? 'System default' : themeController.getPreference() === 'dark' ? 'Dark' : 'Light'}</small></div></button>
         <button class="settings-choice" type="button" data-setting="goal"><span>${iconSvg('clock')}</span><div><strong>Daily learning goal</strong><small>${Number(state.profile?.daily_goal_minutes || 10)} minutes a day</small></div></button>
         <button class="settings-choice" type="button" data-setting="interests"><span>${iconSvg('code')}</span><div><strong>Technical interests</strong><small>${esc((state.profile?.technical_interests || []).join(', ') || 'Not set')}</small></div></button>
         <button class="settings-choice" type="button" data-setting="notifications"><span>${iconSvg('bell')}</span><div><strong>Reminder preference</strong><small>${state.profile?.reminders_enabled ? 'On' : 'Off'} · in-app preference</small></div></button>
