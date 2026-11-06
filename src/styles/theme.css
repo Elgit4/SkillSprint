@@ -2011,3 +2011,37 @@ html[data-theme="dark"] .profile-card span[style*="#c9c4d2"] {
   color: #A6B0BD !important;
 }
 
+
+
+/* Interactive control outlines are stronger than decorative dividers. */
+html[data-theme="dark"] {
+  --border-control: #64758B;
+}
+
+html[data-theme="dark"] .icon-btn,
+html[data-theme="dark"] .search,
+html[data-theme="dark"] .chip:not(.active),
+html[data-theme="dark"] .practice-level-button,
+html[data-theme="dark"] .practice-path-filter select,
+html[data-theme="dark"] .quiz-option,
+html[data-theme="dark"] .settings-choice,
+html[data-theme="dark"] .appearance-choice,
+html[data-theme="dark"] .appearance-icon,
+html[data-theme="dark"] .settings-form input,
+html[data-theme="dark"] .settings-form textarea,
+html[data-theme="dark"] .settings-form select,
+html[data-theme="dark"] .auth-input-wrap,
+html[data-theme="dark"] .close-btn,
+html[data-theme="dark"] .lesson-response,
+html[data-theme="dark"] .playground-editors textarea,
+html[data-theme="dark"] .avatar-choice,
+html[data-theme="dark"] .mission-map-node-card,
+html[data-theme="dark"] .studio-toolbar .btn-light,
+html[data-theme="dark"] .studio-expand-preview,
+html[data-theme="dark"] .install-app-button,
+html[data-theme="dark"] .profile-edit-button,
+html[data-theme="dark"] .btn-light,
+html[data-theme="dark"] .btn-dark {
+  border-color: var(--border-control);
+}
+
