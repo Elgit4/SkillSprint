@@ -51,3 +51,35 @@ test('PWA manifest retains standard SkillSprint desktop and mobile icons', async
   expect(result.icons.some((icon) => icon.purpose.includes('maskable') && icon.ok)).toBeTruthy();
   expect(result.faviconOk).toBeTruthy();
 });
+
+test('mobile sign-up remains scrollable and keeps auth copy inside a narrow viewport', async ({ page }) => {
+  await page.setViewportSize({ width: 320, height: 568 });
+  await page.goto('/');
+  await expect(page.locator('#ssBootScreen')).toBeHidden({ timeout: 15000 });
+  await expect(page.locator('#authGate')).toBeVisible();
+
+  await page.locator('#authModeToggle').click();
+  for (const id of ['authUsername', 'authDisplayName', 'authPhone', 'authPassword', 'authConfirmPassword', 'authSubmit']) {
+    await expect(page.locator('#' + id)).toBeVisible();
+  }
+
+  const layout = await page.evaluate(() => {
+    const gate = document.querySelector('#authGate');
+    const heading = document.querySelector('#authTitle');
+    const intro = document.querySelector('#authIntro');
+    return {
+      overflowY: getComputedStyle(gate).overflowY,
+      scrollable: gate.scrollHeight > gate.clientHeight,
+      headingFits: heading.scrollWidth <= heading.clientWidth + 1,
+      introFits: intro.scrollWidth <= intro.clientWidth + 1,
+    };
+  });
+  expect(layout.overflowY).toBe('auto');
+  expect(layout.scrollable).toBeTruthy();
+  expect(layout.headingFits).toBeTruthy();
+  expect(layout.introFits).toBeTruthy();
+
+  await page.locator('#authSubmit').scrollIntoViewIfNeeded();
+  await expect(page.locator('#authSubmit')).toBeInViewport();
+});
+
