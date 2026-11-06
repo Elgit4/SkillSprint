@@ -1818,7 +1818,7 @@ function syncAuthMode() {
   $('#authPasswordRule').textContent = '6 digits · numbers only';
   $('#forgotPassword').hidden = false;
   $('#forgotPassword').textContent = 'Forgot PIN?';
-  $('#authFormMetaLabel').textContent = 'Your PIN is protected by Supabase Auth';
+  $('#authFormMetaLabel').textContent = 'Keep your PIN private';
   $('#authSubmit').querySelector('span').textContent = isSignup ? 'Create account' : 'Sign in';
   if (authMessage) { authMessage.textContent = ''; authMessage.dataset.error = 'false'; }
 }

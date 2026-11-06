@@ -761,48 +761,48 @@ body :where(
 
 <div id="authGate" class="auth-gate">
   <main class="auth-layout" aria-labelledby="authTitle">
-    <section class="auth-showcase" aria-label="SkillSprint introduction">
+    <section class="auth-showcase" aria-label="Learn by building with SkillSprint">
       <div class="auth-showcase-top">
         <a class="auth-brand" href="/" aria-label="SkillSprint home">
           <img src="/brand/skillsprint-wordmark-light.png" width="320" height="100" alt="SkillSprint">
         </a>
-        <span class="auth-edition">TECH SKILLS, BUILT BY DOING</span>
       </div>
 
       <div class="auth-showcase-copy">
-        <p class="auth-overline"><span></span> YOUR NEXT MOVE STARTS HERE</p>
-        <h1>Turn curiosity<br>into <em>real skills.</em></h1>
-        <p class="auth-showcase-description">Learn technology one focused mission at a time. Practice what matters, track your progress and keep moving forward.</p>
+        <p class="auth-overline"><span></span> A HANDS-ON WAY TO LEARN TECH</p>
+        <h1 id="authShowcaseTitle">Turn curiosity into<br><em>real skills.</em></h1>
+        <p class="auth-showcase-description">Learn through focused technology missions, put each idea into practice and build confidence one project at a time.</p>
       </div>
 
-      <div class="auth-learning-visual" aria-hidden="true">
-        <div class="auth-visual-glow"></div>
-        <div class="auth-code-card">
-          <div class="auth-code-top"><span class="auth-code-dots"><i></i><i></i><i></i></span><span>YOUR NEXT BUILD</span></div>
-          <div class="auth-code-lines">
-            <span><b>01</b><i class="code-purple">const</i> goal = <i class="code-green">"keep learning"</i>;</span>
-            <span><b>02</b><i class="code-purple">while</i> (curious) {</span>
-            <span><b>03</b>&nbsp;&nbsp;practice();</span>
-            <span><b>04</b>&nbsp;&nbsp;buildSomething();</span>
-            <span><b>05</b>}</span>
-          </div>
-          <div class="auth-code-footer"><span class="auth-live-dot"></span> READY WHEN YOU ARE</div>
+      <div class="auth-workbench" aria-hidden="true">
+        <div class="auth-workbench-bar">
+          <span class="auth-workbench-file"><i></i><i></i><i></i><b>index.html</b></span>
+          <span class="auth-workbench-mode"><i></i> LIVE PREVIEW</span>
         </div>
-        <div class="auth-float-card auth-float-one"><span class="auth-float-icon">&lt;/&gt;</span><span><b>Build</b><small>Learn by creating</small></span></div>
-        <div class="auth-float-card auth-float-two"><span class="auth-float-icon auth-icon-lime">↗</span><span><b>Progress</b><small>One mission at a time</small></span></div>
+        <div class="auth-workbench-grid">
+          <div class="auth-workbench-code">
+            <div class="auth-workbench-line"><span>01</span><code><i class="auth-code-tag">&lt;main</i> <b>class</b>=<em>"project"</em><i class="auth-code-tag">&gt;</i></code></div>
+            <div class="auth-workbench-line"><span>02</span><code>&nbsp;&nbsp;<i class="auth-code-tag">&lt;h1&gt;</i>Hello, world.<i class="auth-code-tag">&lt;/h1&gt;</i></code></div>
+            <div class="auth-workbench-line"><span>03</span><code>&nbsp;&nbsp;<i class="auth-code-tag">&lt;p&gt;</i>Built one step at a time.<i class="auth-code-tag">&lt;/p&gt;</i></code></div>
+            <div class="auth-workbench-line"><span>04</span><code><i class="auth-code-tag">&lt;/main&gt;</i></code></div>
+            <div class="auth-workbench-line"><span>05</span><code><i class="auth-code-comment">&lt;!-- keep going --&gt;</i></code></div>
+          </div>
+          <div class="auth-workbench-preview">
+            <span class="auth-workbench-preview-label">OUTPUT</span>
+            <div class="auth-project-preview">
+              <span class="auth-project-kicker">MY FIRST PROJECT</span>
+              <strong>Make something<br>that works.</strong>
+              <p>Small steps. Real progress.</p>
+              <span class="auth-project-link">Open preview <b aria-hidden="true">↗</b></span>
+            </div>
+          </div>
+        </div>
       </div>
-
-      <div class="auth-showcase-bottom">
-        <div class="auth-feature"><span>01</span><div><b>Learn with purpose</b><small>Clear, practical skill paths</small></div></div>
-        <div class="auth-feature"><span>02</span><div><b>Practice every day</b><small>Small steps. Real momentum.</small></div></div>
-        <div class="auth-feature"><span>03</span><div><b>Own your progress</b><small>Your learning, saved securely</small></div></div>
-      </div>
-      <div class="auth-showcase-legal">© SkillSprint · Learn, build, grow.</div>
     </section>
 
     <section class="auth-workspace" aria-label="Account access">
+      <div class="auth-mobile-brand"><img src="/brand/skillsprint-wordmark.png" width="320" height="100" alt="SkillSprint"></div>
       <div class="auth-form-wrap">
-        <div class="auth-mobile-brand"><img src="/brand/skillsprint-wordmark.png" width="320" height="100" alt="SkillSprint"><span class="auth-mobile-tagline">LEARN · PRACTICE · BUILD</span></div>
         <div class="auth-form-heading">
           <span class="auth-form-eyebrow" id="authFormEyebrow">WELCOME BACK</span>
           <h2 id="authTitle">Sign in to SkillSprint</h2>
@@ -854,7 +854,7 @@ body :where(
         <div class="auth-switch"><span id="authSwitchText">New to SkillSprint?</span><button type="button" id="authModeToggle">Create an account <span aria-hidden="true">→</span></button></div>
         <p class="auth-privacy">By continuing, your account and learning progress are stored securely.</p>
       </div>
-      <div class="auth-workspace-footer"><span>Made for curious minds.</span><span class="auth-footer-actions"><button class="auth-install-link" id="installAppBtnAuth" type="button">Install on this device</button><span>Powered by <strong>ElTech</strong></span></span></div>
+      <div class="auth-workspace-footer"><span>© SkillSprint</span><span class="auth-footer-actions"><button class="auth-install-link" id="installAppBtnAuth" type="button">Install on this device</button><span>Powered by <strong>ElTech</strong></span></span></div>
     </section>
   </main>
 </div>
