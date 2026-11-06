@@ -15,7 +15,7 @@ test('the auth showcase has one clear promise and one integrated learning visual
   assert.equal((showcase.match(/<h1\b/g) || []).length, 1, 'The showcase should have one primary headline');
   assert.match(showcase, /id="authShowcaseTitle"/);
   assert.match(showcase, /class="auth-workbench"/);
-  assert.match(showcase, /Turn curiosity into <em>real skills\.<\/em>/);
+  assert.match(showcase, /Turn curiosity into<br><em>real skills\\.<\\/em>/);
   assert.doesNotMatch(showcase, /TECH SKILLS, BUILT BY DOING|YOUR NEXT MOVE STARTS HERE|auth-float-card|auth-showcase-bottom|auth-feature/);
 });
 
