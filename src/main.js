@@ -1,5 +1,7 @@
 import './styles/auth.css';
 import './styles/playground.css';
+import './styles/theme.css';
+import { createThemeController } from './lib/theme.js';
 import { downloadBlob } from './lib/download.js';
 import { supabase, isSupabaseConfigured } from './lib/supabase.js';
 import { completedLessonIds, mergeLessonIds, createSerialQueue } from './lib/progress-state.js';
@@ -29,7 +31,27 @@ import {
 } from './lib/app-core.js';
 
 const $ = (selector, root = document) => root.querySelector(selector);
-const $$ = (selector, root = document) => [...root.querySelectorAll(selector)];
+const $ = (selector, root = document) => [...root.querySelectorAll(selector)];
+
+let themeStorageRef = null;
+let themeMediaQuery = null;
+try { themeStorageRef = window.localStorage; } catch { /* Appearance still works for this tab. */ }
+try { themeMediaQuery = window.matchMedia?.('(prefers-color-scheme: dark)') || null; } catch { /* Default to light when unavailable. */ }
+const themeController = createThemeController({
+  documentRef: document,
+  storageRef: themeStorageRef,
+  matchMediaRef: themeMediaQuery,
+  windowRef: window,
+});
+
+function syncAppearanceSettingLabel() {
+  const labels = { system: 'System default', light: 'Light', dark: 'Dark' };
+  const node = $('#appearanceSettingValue');
+  if (node) node.textContent = labels[themeController.getPreference()] || labels.system;
+}
+
+syncAppearanceSettingLabel();
+
 const state = {
   user: null,
   profile: null,
@@ -785,6 +807,7 @@ function renderProfile() {
   if (interests) interests.textContent = (state.profile?.technical_interests || []).join(', ') || 'No interests selected';
   const reminders = $('#reminderSetting') || $('[data-action="notifications"] small');
   if (reminders) reminders.textContent = state.profile?.reminders_enabled ? 'In-app preference on' : 'In-app preference off';
+  syncAppearanceSettingLabel();
   const prototypeHeading = [...$$('#page-profile h2')].find((node) => /prototype settings/i.test(node.textContent));
   prototypeHeading?.closest('.section-head')?.remove();
   const prototypeCopy = [...$$('#page-profile p')].find((node) => /local interactive prototype|sample progress stays/i.test(node.textContent));
@@ -1247,6 +1270,49 @@ function openEditProfile() {
 
 function openSettings(kind) {
   if (kind === 'edit-profile') return openEditProfile();
+  if (kind === 'appearance') {
+    const labels = { system: 'System', light: 'Light', dark: 'Dark' };
+    const selected = themeController.getPreference();
+    const options = [
+      {
+        value: 'system',
+        title: 'Use device setting',
+        description: 'Follow the appearance selected on your device.',
+        icon: '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="13" rx="2"/><path d="M8 21h8M12 17v4"/></svg>',
+      },
+      {
+        value: 'light',
+        title: 'Light',
+        description: 'Keep SkillSprint in its light appearance.',
+        icon: '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M4.93 4.93l1.42 1.42m11.3 11.3 1.42 1.42M2 12h2m16 0h2M4.93 19.07l1.42-1.42m11.3-11.3 1.42-1.42"/></svg>',
+      },
+      {
+        value: 'dark',
+        title: 'Dark',
+        description: 'Use the Obsidian black and charcoal theme.',
+        icon: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.5 14.2A8.5 8.5 0 0 1 9.8 3.5 8.7 8.7 0 1 0 20.5 14.2Z"/></svg>',
+      },
+    ];
+    openModal(`<h2 id="modalTitle">Appearance</h2>
+      <p class="muted">Choose how SkillSprint looks on this device. Your choice is saved locally.</p>
+      <div class="appearance-options" role="group" aria-label="Appearance preference">
+        ${options.map((option) => `<button class="appearance-choice" type="button" data-theme-preference="${option.value}" aria-pressed="${selected === option.value}">
+          <span class="appearance-icon">${option.icon}</span>
+          <span class="appearance-copy"><strong>${option.title}</strong><small>${option.description}</small></span>
+          <span class="appearance-check" aria-hidden="true">✓</span>
+        </button>`).join('')}
+      </div>`, 'Appearance');
+    $('[data-theme-preference]').forEach((button) => button.addEventListener('click', () => {
+      const preference = button.dataset.themePreference;
+      themeController.setPreference(preference);
+      $('[data-theme-preference]').forEach((choice) => {
+        choice.setAttribute('aria-pressed', String(choice === button));
+      });
+      syncAppearanceSettingLabel();
+      toast(`${labels[preference]} appearance selected.`);
+    }));
+    return;
+  }
   if (kind === 'goal') {
     const values = [10, 15, 20, 30, 45, 60];
     let selected = Number(state.profile?.daily_goal_minutes || 10);
@@ -1671,7 +1737,7 @@ function bindAppUI() {
       } else if (type === 'mission-map') showMissionMap();
       else if (type === 'practice-now' || type === 'earn-xp') nav('practice');
       else if (type === 'playground') openPlayground();
-      else if (type === 'settings' || type === 'goal' || type === 'interests' || type === 'notifications' || type === 'edit-profile') openSettings(type);
+      else if (type === 'settings' || type === 'goal' || type === 'interests' || type === 'notifications' || type === 'edit-profile' || type === 'appearance') openSettings(type);
       else if (type === 'streak-info') showStreakInfo();
       else if (type === 'about') openModal('<h2 id="modalTitle">SkillSprint</h2><p>Short, practical technology lessons. Learn a concept, practise it and build something useful.</p><p class="muted small">Your account, progress and completed missions are synced through Supabase.</p>', 'About');
     }
