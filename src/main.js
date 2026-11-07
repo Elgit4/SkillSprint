@@ -431,6 +431,12 @@ function setupInstallExperience() {
 }
 const bootStartedAt = Date.now();
 function finishInitialBoot() {
+  authInitializationComplete = true;
+  if (authSubmit) {
+    authSubmit.disabled = false;
+    const label = authSubmit.querySelector('span');
+    if (label) label.textContent = authMode === 'signup' ? 'Create account' : 'Sign in';
+  }
   if (!document.documentElement.classList.contains('ss-booting')) return;
   const minimumDisplay = Math.max(0, 140 - (Date.now() - bootStartedAt));
   window.setTimeout(() => {
@@ -2148,12 +2154,4 @@ initializeAuth()
       toast(friendlyError(error));
     }
   })
-  .finally(() => {
-    authInitializationComplete = true;
-    if (authSubmit) {
-      authSubmit.disabled = false;
-      const label = authSubmit.querySelector('span');
-      if (label) label.textContent = authMode === 'signup' ? 'Create account' : 'Sign in';
-    }
-    finishInitialBoot();
-  });
+  .finally(finishInitialBoot);
