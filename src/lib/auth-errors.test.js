@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { isDuplicateAccountError, isInvalidRefreshTokenError, describeAuthError } from './auth-errors.js';
+import { isInitialSessionSnapshotCurrent } from './auth-bootstrap.js';
 
 test('recognizes Supabase duplicate phone-account signup responses', () => {
   assert.equal(isDuplicateAccountError({ code: 'user_already_exists' }), true);
@@ -44,4 +45,12 @@ test('maps common Supabase Auth errors to useful phone/PIN guidance', () => {
     /could not finish creating your account/i,
   );
   assert.equal(describeAuthError({ code: 'some_unknown_error', message: 'Unknown' }), null);
+});
+
+test('rejects a stale initial session snapshot after a newer auth event', () => {
+  assert.equal(isInitialSessionSnapshotCurrent(0, 0), true);
+  assert.equal(isInitialSessionSnapshotCurrent(4, 4), true);
+  assert.equal(isInitialSessionSnapshotCurrent(4, 5), false);
+  assert.equal(isInitialSessionSnapshotCurrent(5, 4), false);
+  assert.equal(isInitialSessionSnapshotCurrent('4', 4), false);
 });
