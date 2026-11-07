@@ -271,12 +271,17 @@ function closeModal() {
 }
 
 function logAuthDiagnostic(stage, error) {
-  // Do not include the entered phone number or PIN in browser diagnostics.
+  // Keep credentials and the phone-derived synthetic email out of diagnostics.
+  const rawMessage = error?.message || String(error || 'Unknown error');
+  const safeMessage = String(rawMessage).replace(
+    /phone\.\d+@accounts\.skillsprint\.invalid/gi,
+    '[phone account]',
+  );
   console.error('[SkillSprint auth diagnostic]', {
     stage,
     code: error?.code || error?.error_code || null,
     status: Number(error?.status) || null,
-    message: error?.message || String(error || 'Unknown error'),
+    message: safeMessage,
   });
 }
 
