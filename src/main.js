@@ -2016,7 +2016,7 @@ async function initializeAuth() {
       hideAppLoading();
       lock();
       closeModal();
-      say('You have signed out.');
+      say('Your session has ended. Sign in again with your telephone number and PIN.');
     }
   });
 
