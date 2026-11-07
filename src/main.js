@@ -5,6 +5,7 @@ import { supabase, isSupabaseConfigured } from './lib/supabase.js';
 import { completedLessonIds, mergeLessonIds, createSerialQueue } from './lib/progress-state.js';
 import { normalizePhone } from './lib/auth-phone.js';
 import { isDuplicateAccountError, isInvalidRefreshTokenError, describeAuthError } from './lib/auth-errors.js';
+import { isInitialSessionSnapshotCurrent } from './lib/auth-bootstrap.js';
 import {
   createPracticeSession,
   advancePracticeSession,
@@ -2094,7 +2095,7 @@ async function initializeAuth() {
     // A sign-in/sign-out event that happened while getSession() was pending is
     // newer than its snapshot. Never let an empty/stale startup result lock a
     // learner who has just signed in.
-    if (authStateRevision !== sessionCheckRevision) return;
+    if (!isInitialSessionSnapshotCurrent(sessionCheckRevision, authStateRevision)) return;
     if (data?.session?.user) {
       if (hasSessionExpired(data.session.user.id)) {
         await supabase.auth.signOut({ scope: 'local' });
@@ -2109,7 +2110,7 @@ async function initializeAuth() {
   } catch (error) {
     // Ignore a stale getSession() failure if a newer auth event already changed
     // the session while the startup check was in flight.
-    if (authStateRevision !== sessionCheckRevision) return;
+    if (!isInitialSessionSnapshotCurrent(sessionCheckRevision, authStateRevision)) return;
     if (isInvalidRefreshTokenError(error)) {
       try { await supabase.auth.signOut({ scope: 'local' }); }
       catch (cleanupError) { console.warn('Could not clear the expired local session:', cleanupError); }
@@ -2122,7 +2123,7 @@ async function initializeAuth() {
         code: error?.code || error?.error_code || null,
         status: Number(error?.status) || null,
         message: String(error?.message || error || 'Unknown error').replace(
-          /phone\\.\\d+@accounts\\.skillsprint\\.invalid/gi,
+          /phone\.\d+@accounts\.skillsprint\.invalid/gi,
           '[phone account]',
         ),
       });
