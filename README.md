@@ -5,7 +5,7 @@ SkillSprint is a mobile-first, gamified technology-skills learning app built wit
 ## User journey and app functions
 
 - **Original welcome splash:** first-visit dialog with the embedded SkillSprint logo, “Learn by building.” headline, original supporting copy and “Get started” action. The first-run state uses `skillsprint:welcome` in browser storage.
-- **Account access:** email/password registration and sign-in; registration collects public username and display name; password visibility toggle; password recovery and password update. Sessions persist across page reloads. The learner returns to the last visited app section after reload; sessions automatically expire after 30 minutes without activity and require sign-in again.
+- **Account access:** telephone-number sign-in with a reusable six-digit PIN; registration collects a username and display name; PIN visibility toggle; duplicate-number signups are redirected to sign-in; sessions persist across page reloads and expire after 30 minutes of inactivity. PIN recovery is not self-service until a verified recovery channel is configured.
 - **Public identity:** username and display name are shown in the app. Email remains the private authentication and recovery identifier. Username/password login is intentionally not simulated in the browser because safely resolving usernames to private email addresses needs a server-side lookup.
 - **Home:** real XP, current level, streak, daily learning time, weekly completion activity, next lesson and learning-path summaries.
 - **Explore:** database-backed published learning paths, path search, progress bars and path lesson lists.
@@ -46,8 +46,8 @@ The patch intentionally leaves `.env.local` untouched. If your current `.env.loc
 
 - For local development without a verified SMTP sender, email confirmation can be turned off in Supabase Auth while testing. Turn it back on for public use and configure a verified SMTP sender.
 - Add the exact local development URL (including the port shown by Vite) to Supabase Auth → URL Configuration → Redirect URLs.
-- The public app exposes email/password authentication only; Google OAuth is not offered.
-- Passwords must be at least eight characters. A four-digit PIN is not used as an internet account password.
+- The public interface exposes telephone-number + six-digit PIN authentication only; Google OAuth and user-facing email login are not offered. Internally, the current compatibility implementation maps each normalized phone number to a reserved, non-deliverable `.invalid` email identity so existing accounts remain usable without SMS or SMTP.
+- The account credential is a six-digit numeric PIN stored and verified by Supabase Auth as the password; it is never stored in the public profile tables. This is a low-entropy credential and must be protected with Supabase Auth rate limits and abuse controls. The current no-SMS flow does not independently verify ownership of the entered telephone number.
 - Supabase's password-leak protection should be enabled before public launch.
 
 ## Data and feature boundaries
@@ -108,9 +108,11 @@ The Supabase Auth advisor currently reports **leaked-password protection disable
 - Publication drafts are in `docs/privacy-notice-draft.md` and `docs/terms-of-use-draft.md`; they must be completed and legally approved before release. Production SMTP and Supabase provider settings also require final review.
 
 
-## Email-only sign-in
+## Phone-number + reusable PIN sign-in
 
-The SkillSprint interface supports email and password only. Google sign-in is not offered. Session persistence is enabled so learners remain on their last visited section after a page reload. A 30-minute inactivity timeout signs the learner out locally; progress remains stored in Supabase. A phone-number plus four-digit PIN flow is not enabled yet: phone verification and a secure credential-migration design are required before changing the live accounts.
+The SkillSprint interface accepts a Ghanaian telephone number (or an international number with country code) and a reusable six-digit numeric PIN. It does not send an SMS or email during registration or sign-in. To preserve the existing seven accounts, the current client maps normalized phone numbers to deterministic reserved identities in the `accounts.skillsprint.invalid` domain and uses Supabase email/password authentication internally. These aliases cannot receive email; therefore the Supabase Email provider must remain enabled and email confirmation must be disabled for new registrations to receive an immediate session. Existing accounts must continue using the same phone number and PIN they registered with.
+
+A repeated signup for an existing number now switches the form to Sign in and retains the phone number. Expired or invalid refresh tokens are cleared locally and the learner is asked to sign in again. The Forgot PIN control explains the support-based recovery path; automated PIN reset is intentionally unavailable until a verified recovery channel exists. Because no OTP is sent, the phone number is an account identifier, not proof of phone ownership. Add phone verification and appropriate abuse controls before treating this as a high-assurance public identity system.
 
 ## Offline functionality
 
