@@ -1763,3 +1763,10 @@ button[disabled],.btn[disabled]{cursor:not-allowed;opacity:.58}
     transition: none !important;
   }
 }
+
+/* Keep the authentication gate hidden after sign-in on mobile.
+   The mobile #authGate display:block rule has higher specificity than
+   the original .auth-gate[hidden] rule. */
+#authGate[hidden] {
+  display: none !important;
+}
