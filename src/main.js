@@ -4,6 +4,7 @@ import { downloadBlob } from './lib/download.js';
 import { supabase, isSupabaseConfigured } from './lib/supabase.js';
 import { completedLessonIds, mergeLessonIds, createSerialQueue } from './lib/progress-state.js';
 import { normalizePhone } from './lib/auth-phone.js';
+import { isDuplicateAccountError, isInvalidRefreshTokenError } from './lib/auth-errors.js';
 import {
   createPracticeSession,
   advancePracticeSession,
@@ -272,8 +273,9 @@ function closeModal() {
 function friendlyError(error) {
   const raw = error?.message || String(error || 'Something went wrong.');
   if (/invalid login credentials/i.test(raw)) return 'The telephone number or PIN is incorrect. Check both and try again.';
-  if (/email not confirmed/i.test(raw)) return 'Email confirmation is still enabled in Supabase. Turn off Confirm email to allow PIN-only registration.';
-  if (/already registered|user already exists/i.test(raw)) return 'An account already exists for this telephone number. Switch to Sign in.';
+  if (isInvalidRefreshTokenError(error)) return 'Your saved sign-in session has expired. Sign in again with your telephone number and PIN.';
+  if (/email not confirmed/i.test(raw)) return 'Account creation is blocked by the Supabase email-confirmation setting. Ask the SkillSprint administrator to review Auth provider settings.';
+  if (isDuplicateAccountError(error)) return 'An account already exists for this telephone number. Sign in with the PIN you used when you created it.';
   if (/duplicate key|profiles_username_lower_uidx|profiles_username_format_check/i.test(raw)) return 'That username is already taken or is not in the required format. Choose another username.';
   if (/permission denied|row-level security/i.test(raw)) return 'Your account is signed in, but the database did not allow this action. Check the Supabase policies and grants.';
   if (/Failed to fetch|NetworkError|fetch failed/i.test(raw)) return 'Could not reach SkillSprint. Check your internet connection and try again.';
@@ -1933,10 +1935,19 @@ function bindAuthUI() {
         toast('You are signed in.');
       }
     } catch (error) {
-      say(friendlyError(error), true);
+      if (isSignup && isDuplicateAccountError(error)) {
+        const phoneValue = authPhone.value;
+        authMode = 'signin';
+        syncAuthMode();
+        authPhone.value = phoneValue;
+        say('This telephone number already has a SkillSprint account. We switched you to Sign in; enter your existing six-digit PIN.', false);
+        authPassword.focus();
+      } else {
+        say(friendlyError(error), true);
+      }
     } finally {
       authSubmit.disabled = false;
-      authSubmit.querySelector('span').textContent = isSignup ? 'Create account' : 'Sign in';
+      authSubmit.querySelector('span').textContent = authMode === 'signup' ? 'Create account' : 'Sign in';
     }
   });
 }
@@ -2005,7 +2016,7 @@ async function initializeAuth() {
       hideAppLoading();
       lock();
       closeModal();
-      say('You have signed out.');
+      say('Your session has ended. Sign in again with your telephone number and PIN.');
     }
   });
 
@@ -2033,6 +2044,10 @@ async function initializeAuth() {
       if (params.get('type') === 'recovery') queueMicrotask(showPasswordReset);
     } else lock();
   } catch (error) {
+    if (isInvalidRefreshTokenError(error)) {
+      try { await supabase.auth.signOut({ scope: 'local' }); }
+      catch (cleanupError) { console.warn('Could not clear the expired local session:', cleanupError); }
+    }
     lock();
     say(friendlyError(error), true);
   }
