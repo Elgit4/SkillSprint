@@ -4,7 +4,7 @@ import { downloadBlob } from './lib/download.js';
 import { supabase, isSupabaseConfigured } from './lib/supabase.js';
 import { completedLessonIds, mergeLessonIds, createSerialQueue } from './lib/progress-state.js';
 import { normalizePhone } from './lib/auth-phone.js';
-import { isDuplicateAccountError, isInvalidRefreshTokenError } from './lib/auth-errors.js';
+import { isDuplicateAccountError, isInvalidRefreshTokenError, describeAuthError } from './lib/auth-errors.js';
 import {
   createPracticeSession,
   advancePracticeSession,
@@ -270,7 +270,24 @@ function closeModal() {
   document.body.classList.remove('modal-open');
 }
 
+function logAuthDiagnostic(stage, error) {
+  // Keep credentials and the phone-derived synthetic email out of diagnostics.
+  const rawMessage = error?.message || String(error || 'Unknown error');
+  const safeMessage = String(rawMessage).replace(
+    /phone\.\d+@accounts\.skillsprint\.invalid/gi,
+    '[phone account]',
+  );
+  console.error('[SkillSprint auth diagnostic]', {
+    stage,
+    code: error?.code || error?.error_code || null,
+    status: Number(error?.status) || null,
+    message: safeMessage,
+  });
+}
+
 function friendlyError(error) {
+  const known = describeAuthError(error);
+  if (known) return known;
   const raw = error?.message || String(error || 'Something went wrong.');
   if (/invalid login credentials/i.test(raw)) return 'The telephone number or PIN is incorrect. Check both and try again.';
   if (isInvalidRefreshTokenError(error)) return 'Your saved sign-in session has expired. Sign in again with your telephone number and PIN.';
@@ -1764,6 +1781,7 @@ async function hydrate(user, { force = false } = {}) {
       if (authMessage) authMessage.textContent = '';
     } catch (error) {
       if (ticket !== hydrationTicket || state.user?.id !== user.id) return;
+      logAuthDiagnostic('profile-hydration', error);
       if (!wasHydrated) {
         state.hydratedUserId = null;
         lock();
@@ -1935,6 +1953,7 @@ function bindAuthUI() {
         toast('You are signed in.');
       }
     } catch (error) {
+      logAuthDiagnostic(isSignup ? 'signup' : 'signin', error);
       if (isSignup && isDuplicateAccountError(error)) {
         const phoneValue = authPhone.value;
         authMode = 'signin';
