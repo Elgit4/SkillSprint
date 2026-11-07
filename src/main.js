@@ -5,6 +5,7 @@ import { supabase, isSupabaseConfigured } from './lib/supabase.js';
 import { completedLessonIds, mergeLessonIds, createSerialQueue } from './lib/progress-state.js';
 import { normalizePhone } from './lib/auth-phone.js';
 import { isDuplicateAccountError, isInvalidRefreshTokenError, describeAuthError } from './lib/auth-errors.js';
+import { isInitialSessionSnapshotCurrent } from './lib/auth-bootstrap.js';
 import {
   createPracticeSession,
   advancePracticeSession,
@@ -68,6 +69,8 @@ let hydrationPromise = null;
 let hydrationUserId = null;
 let hydrationTicket = 0;
 let loadTicket = 0;
+let authInitializationComplete = false;
+let authStateRevision = 0;
 const enqueueDataLoad = createSerialQueue();
 let authMode = 'signin';
 let passwordResetOpen = false;
@@ -428,6 +431,12 @@ function setupInstallExperience() {
 }
 const bootStartedAt = Date.now();
 function finishInitialBoot() {
+  authInitializationComplete = true;
+  if (authSubmit) {
+    authSubmit.disabled = false;
+    const label = authSubmit.querySelector('span');
+    if (label) label.textContent = authMode === 'signup' ? 'Create account' : 'Sign in';
+  }
   if (!document.documentElement.classList.contains('ss-booting')) return;
   const minimumDisplay = Math.max(0, 140 - (Date.now() - bootStartedAt));
   window.setTimeout(() => {
@@ -1761,6 +1770,34 @@ function bindAppUI() {
   });
 }
 
+function showHydrationRecovery(user) {
+  openModal(`<section class="auth-hydration-recovery">
+    <h2 id="modalTitle">You're signed in</h2>
+    <p class="muted">SkillSprint accepted your sign-in, but could not finish loading your learning data. Your account and saved progress have not been deleted.</p>
+    <p class="muted small">Check your connection, then retry loading your account.</p>
+    <button class="btn btn-primary btn-full" id="retryHydration" type="button">Retry loading</button>
+    <button class="btn btn-light btn-full" id="exitHydration" type="button">Sign out on this device</button>
+  </section>`, 'Account connected');
+
+  $('#retryHydration')?.addEventListener('click', () => {
+    closeModal();
+    void hydrate(user, { force: true });
+  });
+  $('#exitHydration')?.addEventListener('click', async (event) => {
+    const button = event.currentTarget;
+    button.disabled = true;
+    button.textContent = 'Signing out…';
+    try {
+      const { error } = await supabase.auth.signOut({ scope: 'local' });
+      if (error) throw error;
+    } catch (error) {
+      button.disabled = false;
+      button.textContent = 'Sign out on this device';
+      toast(friendlyError(error));
+    }
+  });
+}
+
 async function hydrate(user, { force = false } = {}) {
   if (!user?.id) return;
   if (hydrationPromise && hydrationUserId === user.id) return hydrationPromise;
@@ -1784,9 +1821,13 @@ async function hydrate(user, { force = false } = {}) {
       logAuthDiagnostic('profile-hydration', error);
       if (!wasHydrated) {
         state.hydratedUserId = null;
-        lock();
+        // Authentication succeeded. Keep the valid session and offer recovery
+        // rather than forcing the learner back through the login form.
+        unlock();
+        showHydrationRecovery(user);
+      } else {
+        say(friendlyError(error), true);
       }
-      say(friendlyError(error), true);
     } finally {
       if (ticket === hydrationTicket) hideAppLoading();
     }
@@ -1898,6 +1939,10 @@ function bindAuthUI() {
   });
   authForm?.addEventListener('submit', async (event) => {
     event.preventDefault();
+    if (!authInitializationComplete) {
+      say('SkillSprint is still checking your saved sign-in. Please try again in a moment.', false);
+      return;
+    }
     if (!isSupabaseConfigured || !supabase) {
       say('Account access is unavailable until the Supabase project URL and publishable key are configured.', true);
       return;
@@ -1993,6 +2038,7 @@ async function initializeAuth() {
   }
 
   supabase.auth.onAuthStateChange((event, session) => {
+    if (event === 'SIGNED_IN' || event === 'SIGNED_OUT') authStateRevision += 1;
     if (event === 'PASSWORD_RECOVERY') {
       state.user = session?.user || state.user;
       unlock();
@@ -2048,9 +2094,14 @@ async function initializeAuth() {
     history.replaceState(null, '', location.pathname + location.search);
   }
 
+  const sessionCheckRevision = authStateRevision;
   try {
     const { data, error } = await supabase.auth.getSession();
     if (error) throw error;
+    // A sign-in/sign-out event that happened while getSession() was pending is
+    // newer than its snapshot. Never let an empty/stale startup result lock a
+    // learner who has just signed in.
+    if (!isInitialSessionSnapshotCurrent(sessionCheckRevision, authStateRevision)) return;
     if (data?.session?.user) {
       if (hasSessionExpired(data.session.user.id)) {
         await supabase.auth.signOut({ scope: 'local' });
@@ -2063,21 +2114,44 @@ async function initializeAuth() {
       if (params.get('type') === 'recovery') queueMicrotask(showPasswordReset);
     } else lock();
   } catch (error) {
+    // Ignore a stale getSession() failure if a newer auth event already changed
+    // the session while the startup check was in flight.
+    if (!isInitialSessionSnapshotCurrent(sessionCheckRevision, authStateRevision)) return;
     if (isInvalidRefreshTokenError(error)) {
       try { await supabase.auth.signOut({ scope: 'local' }); }
       catch (cleanupError) { console.warn('Could not clear the expired local session:', cleanupError); }
     }
-    lock();
-    say(friendlyError(error), true);
+    if (!state.user?.id) {
+      lock();
+      say(friendlyError(error), true);
+    } else {
+      console.error('[SkillSprint auth diagnostic] startup-session-check', {
+        code: error?.code || error?.error_code || null,
+        status: Number(error?.status) || null,
+        message: String(error?.message || error || 'Unknown error').replace(
+          /phone\.\d+@accounts\.skillsprint\.invalid/gi,
+          '[phone account]',
+        ),
+      });
+    }
   }
 }
 
 bindAppUI();
 setupInstallExperience();
+if (authSubmit) {
+  authSubmit.disabled = true;
+  const label = authSubmit.querySelector('span');
+  if (label) label.textContent = 'Checking account…';
+}
 initializeAuth()
   .catch((error) => {
     console.error('SkillSprint startup failed:', error);
-    lock();
-    say(friendlyError(error), true);
+    if (!state.user?.id) {
+      lock();
+      say(friendlyError(error), true);
+    } else {
+      toast(friendlyError(error));
+    }
   })
   .finally(finishInitialBoot);
