@@ -29,11 +29,11 @@ export function describeAuthError(error) {
   if (code === 'weak_password' || /weak password|pwned|leaked password|password is too easy to guess/.test(message)) {
     return 'That PIN is too common or weak. Choose a less obvious six-digit PIN and try again.';
   }
-  if (code === 'over_request_rate_limit' || status === 429 || /rate limit|too many requests/.test(message)) {
-    return 'Too many attempts have been made. Wait a few minutes, then try again.';
-  }
   if (code === 'over_email_send_rate_limit') {
     return 'Account registration is temporarily limited. Please try again later.';
+  }
+  if (code === 'over_request_rate_limit' || status === 429 || /rate limit|too many requests/.test(message)) {
+    return 'Too many attempts have been made. Wait a few minutes, then try again.';
   }
   if (code === 'signup_disabled') {
     return 'New SkillSprint accounts are currently disabled. Contact support.';
