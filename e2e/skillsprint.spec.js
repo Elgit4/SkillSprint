@@ -83,3 +83,56 @@ test('mobile sign-up remains scrollable and keeps auth copy inside a narrow view
   await expect(page.locator('#authSubmit')).toBeInViewport();
 });
 
+
+
+test('authentication copy is concise and aligned at desktop, tablet and mobile widths', async ({ page }) => {
+  for (const viewport of [
+    { width: 1440, height: 900 },
+    { width: 768, height: 1024 },
+    { width: 375, height: 812 },
+  ]) {
+    await page.setViewportSize(viewport);
+    await page.goto('/');
+    await expect(page.locator('#ssBootScreen')).toBeHidden({ timeout: 15000 });
+    await expect(page.locator('#authGate')).toBeVisible();
+    await expect(page.locator('#authTitle')).toHaveText('Sign in');
+    await expect(page.locator('#authIntro')).toHaveText('Use your telephone number and six-digit PIN.');
+    await expect(page.locator('#authFormEyebrow')).toHaveCount(0);
+    await expect(page.locator('.auth-privacy')).toHaveCount(0);
+    await expect(page.locator('#installAppBtnAuth')).toHaveCount(0);
+
+    const signInLayout = await page.evaluate(() => {
+      const gate = document.querySelector('#authGate');
+      const title = document.querySelector('#authTitle');
+      const intro = document.querySelector('#authIntro');
+      const label = document.querySelector('#authPhoneLabel');
+      return {
+        titleAlign: getComputedStyle(title).textAlign,
+        introAlign: getComputedStyle(intro).textAlign,
+        labelAlign: getComputedStyle(label).textAlign,
+        noHorizontalOverflow: document.documentElement.scrollWidth <= window.innerWidth,
+        gateVisible: !gate.hidden,
+      };
+    });
+    expect(signInLayout.titleAlign).toBe('left');
+    expect(signInLayout.introAlign).toBe('left');
+    expect(signInLayout.labelAlign).toBe('left');
+    expect(signInLayout.noHorizontalOverflow).toBeTruthy();
+    expect(signInLayout.gateVisible).toBeTruthy();
+
+    await page.locator('#authModeToggle').click();
+    await expect(page.locator('#authTitle')).toHaveText('Create account');
+    await expect(page.locator('#authIntro')).toHaveText('Add your details and choose a six-digit PIN.');
+    for (const id of ['authUsername', 'authDisplayName', 'authPhone', 'authPassword', 'authConfirmPassword', 'authSubmit']) {
+      await expect(page.locator('#' + id)).toBeVisible();
+    }
+    const signUpLayout = await page.evaluate(() => ({
+      titleAlign: getComputedStyle(document.querySelector('#authTitle')).textAlign,
+      noHorizontalOverflow: document.documentElement.scrollWidth <= window.innerWidth,
+      confirmHintCount: document.querySelectorAll('#authConfirmHint').length,
+    }));
+    expect(signUpLayout.titleAlign).toBe('left');
+    expect(signUpLayout.noHorizontalOverflow).toBeTruthy();
+    expect(signUpLayout.confirmHintCount).toBe(0);
+  }
+});

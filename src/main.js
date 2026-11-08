@@ -1879,17 +1879,15 @@ function syncAuthMode() {
   authUsername.value = '';
   authDisplayName.value = '';
   $('#authPhoneLabel').textContent = 'Telephone number';
-  $('#authTitle').textContent = isSignup ? 'Create your account' : 'Sign in to SkillSprint';
-  $('#authFormEyebrow').textContent = isSignup ? 'GET STARTED' : 'WELCOME BACK';
+  $('#authTitle').textContent = isSignup ? 'Create account' : 'Sign in';
   $('#authIntro').textContent = isSignup
-    ? 'Create a new account with your telephone number and reusable six-digit PIN. No email or SMS code is used.'
-    : 'Sign in using your telephone number and six-digit PIN.';
-  $('#authSwitchText').textContent = isSignup ? 'Already have an account?' : 'New to SkillSprint?';
+    ? 'Add your details and choose a six-digit PIN.'
+    : 'Use your telephone number and six-digit PIN.';
+  $('#authSwitchText').textContent = isSignup ? 'Already registered?' : 'New here?';
   $('#authModeToggle').innerHTML = isSignup ? 'Sign in instead <span aria-hidden="true">→</span>' : 'Create an account <span aria-hidden="true">→</span>';
-  $('#authPasswordRule').textContent = '6 digits · numbers only';
+  $('#authPasswordRule').textContent = '6 digits';
   $('#forgotPassword').hidden = false;
   $('#forgotPassword').textContent = 'Forgot PIN?';
-  $('#authFormMetaLabel').textContent = 'Keep your PIN private';
   $('#authSubmit').querySelector('span').textContent = isSignup ? 'Create account' : 'Sign in';
   if (authMessage) { authMessage.textContent = ''; authMessage.dataset.error = 'false'; }
 }
