@@ -328,7 +328,7 @@ function showOriginalWelcomeSplash() {
 
 
 let deferredInstallPrompt = null;
-const installButtons = () => [$('#installAppBtn'), $('#installAppBtnAuth'), $('#installAppSettingsBtn')].filter(Boolean);
+const installButtons = () => [$('#installAppBtn'), $('#installAppSettingsBtn')].filter(Boolean);
 function isInstalledPWA() {
   return window.matchMedia?.('(display-mode: standalone)').matches || window.navigator.standalone === true;
 }
