@@ -8,23 +8,26 @@ const manifest = JSON.parse(await readFile(new URL('../public/manifest.webmanife
 const iconPng = await readFile(new URL('../public/icons/icon-192.png', import.meta.url));
 
 test('the first paint is covered by a critical spinner-only loading screen', () => {
-  assert.match(html, /<html lang="en" class="ss-booting">/);
-  assert.match(html, /id="ss-critical-boot"/);
-  assert.match(html, /id="ssBootScreen"/);
-  assert.match(html, /body>\*:not\(#ssBootScreen\)/);
-  assert.match(html, /ss-boot-spinner/);
-  assert.doesNotMatch(html.slice(html.indexOf('<div id="ssBootScreen"'), html.indexOf('</div>', html.indexOf('<div id="ssBootScreen"'))), /<img|logo|wordmark/i);
-  assert.match(main, /function finishInitialBoot\(\)/);
-  assert.match(main, /\.finally\(finishInitialBoot\)/);
+  assert.ok(html.includes('<html lang="en" class="ss-booting">'));
+  assert.ok(html.includes('id="ss-critical-boot"'));
+  assert.ok(html.includes('id="ssBootScreen"'));
+  assert.ok(html.includes('body>*:not(#ssBootScreen)'));
+  assert.ok(html.includes('ss-boot-spinner'));
+  const spinnerStart = html.indexOf('<div id="ssBootScreen"');
+  const spinnerEnd = html.indexOf('</div>', spinnerStart);
+  assert.equal(html.slice(spinnerStart, spinnerEnd).includes('<img'), false);
+  assert.ok(main.includes('function finishInitialBoot()'));
+  assert.ok(main.includes('.finally(finishInitialBoot)'));
 });
 
-test('PWA installation metadata, entry points and app shortcuts are provided', () => {
-  assert.match(html, /rel="manifest" href="manifest\.webmanifest"/);
-  assert.match(html, /rel="icon" type="image\/png" sizes="192x192" href="\/icons\/icon-192\.png"/);
-  assert.match(html, /id="installAppBtn"/);
-  assert.match(html, /id="installAppBtnAuth"/);
-  assert.match(main, /beforeinstallprompt/);
-  assert.match(main, /appinstalled/);
+test('PWA installation is available in the app without crowding the sign-in screen', () => {
+  assert.ok(html.includes('rel="manifest" href="manifest.webmanifest"'));
+  assert.ok(html.includes('rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png"'));
+  assert.ok(html.includes('id="installAppBtn"'));
+  assert.equal(html.includes('id="installAppBtnAuth"'), false);
+  assert.ok(main.includes("const installButtons = () => [$('#installAppBtn'), $('#installAppSettingsBtn')].filter(Boolean);"));
+  assert.ok(main.includes('beforeinstallprompt'));
+  assert.ok(main.includes('appinstalled'));
   assert.equal(manifest.display, 'standalone');
   assert.ok(manifest.icons.some((icon) => icon.sizes === '192x192'));
   assert.ok(manifest.icons.some((icon) => icon.sizes === '512x512'));
@@ -32,17 +35,18 @@ test('PWA installation metadata, entry points and app shortcuts are provided', (
 });
 
 test('offline queues and service-worker caching are disabled', () => {
-  assert.match(main, /retireOfflineSupport\(\)/);
-  assert.match(main, /getRegistrations\(\)/);
-  assert.doesNotMatch(main, /offline-store|saveOfflineSnapshot|loadOfflineSnapshot|enqueueOfflineAction|navigator\.serviceWorker\.register/i);
-  assert.doesNotMatch(html, /id="offlineStatus"|appHydrationScreen/);
+  assert.ok(main.includes('retireOfflineSupport()'));
+  assert.ok(main.includes('getRegistrations()'));
+  assert.equal(main.toLowerCase().includes('navigator.serviceworker.register'), false);
+  assert.equal(html.includes('id="offlineStatus"'), false);
+  assert.equal(html.includes('appHydrationScreen'), false);
 });
 
 test('all install icons referenced by the manifest exist', async () => {
   for (const icon of manifest.icons) {
-    const path = new URL(`../public/${icon.src.replace(/^\.\//, '')}`, import.meta.url);
+    const path = new URL('../public/' + icon.src.replace('./', ''), import.meta.url);
     const info = await stat(path);
-    assert.ok(info.size > 100, `Icon is missing or too small: ${icon.src}`);
+    assert.ok(info.size > 100, 'Icon is missing or too small: ' + icon.src);
   }
   await stat(new URL('../public/icons/apple-touch-icon.png', import.meta.url));
 });

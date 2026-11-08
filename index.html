@@ -769,44 +769,18 @@ body :where(
       </div>
 
       <div class="auth-showcase-copy">
-        <p class="auth-overline"><span></span> A HANDS-ON WAY TO LEARN TECH</p>
-        <h1 id="authShowcaseTitle">Turn curiosity into<br><em>real skills.</em></h1>
-        <p class="auth-showcase-description">Learn through focused technology missions, put each idea into practice and build confidence one project at a time.</p>
+        <h1 id="authShowcaseTitle">Learn by<br><em>building.</em></h1>
+        <p class="auth-showcase-description">Practical technology missions that turn what you learn into real skills.</p>
       </div>
 
-      <div class="auth-workbench" aria-hidden="true">
-        <div class="auth-workbench-bar">
-          <span class="auth-workbench-file"><i></i><i></i><i></i><b>index.html</b></span>
-          <span class="auth-workbench-mode"><i></i> LIVE PREVIEW</span>
-        </div>
-        <div class="auth-workbench-grid">
-          <div class="auth-workbench-code">
-            <div class="auth-workbench-line"><span>01</span><code><i class="auth-code-tag">&lt;main</i> <b>class</b>=<em>"project"</em><i class="auth-code-tag">&gt;</i></code></div>
-            <div class="auth-workbench-line"><span>02</span><code>&nbsp;&nbsp;<i class="auth-code-tag">&lt;h1&gt;</i>Hello, world.<i class="auth-code-tag">&lt;/h1&gt;</i></code></div>
-            <div class="auth-workbench-line"><span>03</span><code>&nbsp;&nbsp;<i class="auth-code-tag">&lt;p&gt;</i>Built one step at a time.<i class="auth-code-tag">&lt;/p&gt;</i></code></div>
-            <div class="auth-workbench-line"><span>04</span><code><i class="auth-code-tag">&lt;/main&gt;</i></code></div>
-            <div class="auth-workbench-line"><span>05</span><code><i class="auth-code-comment">&lt;!-- keep going --&gt;</i></code></div>
-          </div>
-          <div class="auth-workbench-preview">
-            <span class="auth-workbench-preview-label">OUTPUT</span>
-            <div class="auth-project-preview">
-              <span class="auth-project-kicker">MY FIRST PROJECT</span>
-              <strong>Make something<br>that works.</strong>
-              <p>Small steps. Real progress.</p>
-              <span class="auth-project-link">Open preview <b aria-hidden="true">↗</b></span>
-            </div>
-          </div>
-        </div>
-      </div>
     </section>
 
     <section class="auth-workspace" aria-label="Account access">
       <div class="auth-mobile-brand"><img src="/brand/skillsprint-wordmark.png" width="320" height="100" alt="SkillSprint"></div>
       <div class="auth-form-wrap">
         <div class="auth-form-heading">
-          <span class="auth-form-eyebrow" id="authFormEyebrow">WELCOME BACK</span>
-          <h2 id="authTitle">Sign in to SkillSprint</h2>
-          <p id="authIntro">Sign in using your telephone number and six-digit PIN.</p>
+          <h2 id="authTitle">Sign in</h2>
+          <p id="authIntro">Use your telephone number and six-digit PIN.</p>
         </div>
 
         <form id="authForm" class="auth-form" novalidate>
@@ -817,7 +791,7 @@ body :where(
           </div>
           <div class="auth-field" id="authDisplayNameGroup" hidden>
             <label for="authDisplayName">Display name</label>
-            <div class="auth-input-wrap"><input id="authDisplayName" type="text" autocomplete="name" aria-describedby="authDisplayNameHint" maxlength="40" placeholder="How should we call you?"></div><small class="auth-hint" id="authDisplayNameHint">Use the name you would like to see in your profile.</small>
+            <div class="auth-input-wrap"><input id="authDisplayName" type="text" autocomplete="name" maxlength="40" placeholder="Your name"></div>
           </div>
           <div class="auth-field" id="authPhoneGroup">
             <label for="authPhone" id="authPhoneLabel">Telephone number</label>
@@ -825,10 +799,10 @@ body :where(
               <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="6" y="2" width="12" height="20" rx="2"></rect><path d="M11 18h2"></path></svg>
               <input id="authPhone" type="tel" inputmode="tel" autocomplete="tel" aria-describedby="authPhoneHint" placeholder="024 123 4567" required>
             </div>
-            <small class="auth-hint" id="authPhoneHint">Use your Ghana number or include your international country code.</small>
+            <small class="auth-hint" id="authPhoneHint">Ghana number or international format.</small>
           </div>
           <div class="auth-field">
-            <div class="auth-label-row"><label for="authPassword">Six-digit PIN</label><span class="auth-password-rule" id="authPasswordRule">6 digits · numbers only</span></div>
+            <div class="auth-label-row"><label for="authPassword">Six-digit PIN</label><span class="auth-password-rule" id="authPasswordRule">6 digits</span></div>
             <div class="auth-input-wrap auth-password-wrap">
               <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="10" width="16" height="11" rx="2"></rect><path d="M8 10V7a4 4 0 1 1 8 0v3"></path></svg>
               <input id="authPassword" type="password" inputmode="numeric" enterkeyhint="done" autocomplete="current-password" aria-describedby="authPasswordRule" minlength="6" maxlength="6" pattern="[0-9]{6}" placeholder="Enter your six-digit PIN" required>
@@ -842,19 +816,17 @@ body :where(
             <label for="authConfirmPassword">Confirm six-digit PIN</label>
             <div class="auth-input-wrap">
               <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="10" width="16" height="11" rx="2"></rect><path d="M8 10V7a4 4 0 1 1 8 0v3"></path></svg>
-              <input id="authConfirmPassword" type="password" inputmode="numeric" enterkeyhint="done" autocomplete="new-password" aria-describedby="authConfirmHint" minlength="6" maxlength="6" pattern="[0-9]{6}" placeholder="Enter the PIN again">
+              <input id="authConfirmPassword" type="password" inputmode="numeric" enterkeyhint="done" autocomplete="new-password" minlength="6" maxlength="6" pattern="[0-9]{6}" placeholder="Confirm your six-digit PIN">
             </div>
-            <small class="auth-hint" id="authConfirmHint">Enter the same six-digit PIN again.</small>
           </div>
-          <div class="auth-form-meta" id="authFormMeta"><span id="authFormMetaLabel">Secure account access</span><button class="auth-forgot" id="forgotPassword" type="button">Forgot PIN?</button></div>
+          <div class="auth-form-meta" id="authFormMeta"><span id="authFormMetaLabel">Keep your PIN private</span><button class="auth-forgot" id="forgotPassword" type="button">Forgot PIN?</button></div>
           <button class="auth-submit" type="submit" id="authSubmit"><span>Sign in</span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14m-6-6 6 6-6 6"></path></svg></button>
                     <p class="auth-message" id="authMessage" role="status" aria-live="polite" aria-atomic="true"></p>
         </form>
 
-        <div class="auth-switch"><span id="authSwitchText">New to SkillSprint?</span><button type="button" id="authModeToggle">Create an account <span aria-hidden="true">→</span></button></div>
-        <p class="auth-privacy">By continuing, your account and learning progress are stored securely.</p>
+        <div class="auth-switch"><span id="authSwitchText">New here?</span><button type="button" id="authModeToggle">Create an account <span aria-hidden="true">→</span></button></div>
       </div>
-      <div class="auth-workspace-footer"><span>© SkillSprint</span><span class="auth-footer-actions"><button class="auth-install-link" id="installAppBtnAuth" type="button">Install on this device</button><span>Powered by <strong>ElTech</strong></span></span></div>
+      <div class="auth-workspace-footer"><span>Powered by <strong>ElTech</strong></span></div>
     </section>
   </main>
 </div>
